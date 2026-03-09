@@ -1,0 +1,10 @@
+{
+  "plugins": {
+    "stripe": {
+      "enabled": true
+    },
+    "clerk": {
+      "enabled": true
+    }
+  }
+}
