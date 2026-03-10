@@ -356,7 +356,7 @@ export default function LandingPage() {
           <Link href="/stress-test">Stress Test</Link>
           <Link href="/registry">Registry</Link>
           <Link href="/docs">Docs</Link>
-          <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://github.com/Reliathedisco/IntegrateAPI_Fusewire" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
         <span className="footer-copy">© 2026 Reli Music LLC</span>
       </footer>

@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { logger } from "@/lib/logger";
 
 export async function POST() {
   try {
@@ -38,7 +39,7 @@ export async function POST() {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Checkout error:", error);
+    logger.error("Checkout error", error);
     return NextResponse.json(
       { error: "Failed to create checkout session" },
       { status: 500 }
