@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { currentUser } from "@clerk/nextjs/server";
 import { getIntegrationBySlug } from "@/lib/data";
 import CodeBlock from "@/components/CodeBlock";
 
@@ -15,6 +16,41 @@ export default async function IntegrationDetailPage({ params }: Props) {
 
   if (!integration) {
     notFound();
+  }
+
+  const user = await currentUser();
+  const isPro = user?.publicMetadata?.isPro === true;
+
+  if (integration.tier === "pro" && !isPro) {
+    return (
+      <div className="container">
+        <Link href="/integrations" className="backLink">
+          ← Back to Integrations
+        </Link>
+        <div className="detailHeader">
+          <h1>{integration.name}</h1>
+          <span className="tier tier-pro">pro</span>
+        </div>
+        <p className="detailDescription">{integration.description}</p>
+        <div
+          style={{
+            marginTop: "32px",
+            padding: "24px",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "10px",
+            maxWidth: "420px",
+          }}
+        >
+          <p style={{ marginBottom: "16px", color: "var(--text-mid)" }}>
+            This integration requires a Pro account.
+          </p>
+          <Link href="/account" className="primary" style={{ display: "inline-block" }}>
+            Upgrade to Pro — $29 →
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

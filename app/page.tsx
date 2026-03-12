@@ -338,6 +338,85 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section style={{ padding: "80px 40px", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div className="reveal visible" style={{ textAlign: "center", marginBottom: "48px" }}>
+            <div className="section-label center">Pricing</div>
+            <h2 className="section-title center">Simple, one-time pricing.</h2>
+            <p className="section-sub" style={{ margin: "0 auto" }}>
+              Pay once. Use forever. No subscriptions, no seat fees.
+            </p>
+          </div>
+
+          <div
+            className="reveal visible"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "1px",
+              background: "var(--border)",
+              border: "1px solid var(--border)",
+              maxWidth: "600px",
+              margin: "0 auto",
+            }}
+          >
+            {/* Free tier */}
+            <div style={{ background: "var(--bg-card)", padding: "36px 32px" }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: "12px" }}>Free</div>
+              <div style={{ fontFamily: "var(--serif)", fontSize: "40px", fontWeight: 400, lineHeight: 1, marginBottom: "24px" }}>$0</div>
+              <ul className="card-features">
+                <li>5 integrations</li>
+                <li>All free-tier templates</li>
+                <li>Registry access</li>
+                <li>Stress Test tool</li>
+                <li>CLI access</li>
+              </ul>
+              <Link
+                href="/sign-up"
+                className="btn-ghost"
+                style={{ marginTop: "28px", display: "inline-block" }}
+              >
+                Get started free
+              </Link>
+            </div>
+
+            {/* Pro tier */}
+            <div style={{ background: "var(--bg-card)", padding: "36px 32px", borderLeft: "1px solid var(--accent)", position: "relative" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "2px",
+                  background: "var(--accent)",
+                }}
+              />
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "12px" }}>Pro</div>
+              <div style={{ marginBottom: "24px" }}>
+                <span style={{ fontFamily: "var(--serif)", fontSize: "40px", fontWeight: 400, lineHeight: 1 }}>$29</span>
+                <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--text-dim)", marginLeft: "8px" }}>one-time</span>
+              </div>
+              <ul className="card-features">
+                <li>Unlimited integrations</li>
+                <li>All pro-tier templates</li>
+                <li>Registry access</li>
+                <li>Stress Test tool</li>
+                <li>Future templates included</li>
+              </ul>
+              <Link
+                href="/sign-up"
+                className="btn-primary"
+                style={{ marginTop: "28px", display: "inline-block" }}
+              >
+                Get Pro →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="cta-section">
         <div className="cta-inner reveal visible">
