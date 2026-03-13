@@ -21,10 +21,11 @@ function AccountContent() {
         type: "success",
         text: "Payment successful! Your account has been upgraded to Pro.",
       });
+      user?.reload();
     } else if (searchParams.get("canceled") === "true") {
       setMessage({ type: "error", text: "Payment was canceled." });
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   if (!isLoaded) {
     return (
