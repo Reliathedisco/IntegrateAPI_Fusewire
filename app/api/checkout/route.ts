@@ -49,6 +49,7 @@ export async function POST() {
           quantity: 1,
         },
       ],
+      allow_promotion_codes: true,
       customer_email: user.primaryEmailAddress?.emailAddress,
       metadata: {
         clerkUserId: userId,
