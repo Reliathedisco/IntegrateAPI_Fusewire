@@ -4,7 +4,9 @@ import { stripe } from "@/lib/stripe";
 import { logger } from "@/lib/logger";
 import Stripe from "stripe";
 
-export async function POST() {
+type CheckoutPlan = "lifetime" | "subscription";
+
+export async function POST(req: Request) {
   try {
     const { userId } = await auth();
     const user = await currentUser();
@@ -12,15 +14,6 @@ export async function POST() {
     if (!userId || !user) {
       logger.error("Checkout: Unauthorized - no userId or user");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const priceId = process.env.STRIPE_PRICE_ID;
-    if (!priceId) {
-      logger.error("Checkout: STRIPE_PRICE_ID not configured");
-      return NextResponse.json(
-        { error: "Stripe price not configured" },
-        { status: 500 }
-      );
     }
 
     if (!process.env.STRIPE_SECRET_KEY) {
@@ -31,17 +24,43 @@ export async function POST() {
       );
     }
 
+    const body = (await req.json().catch(() => ({}))) as { plan?: unknown };
+    const plan: CheckoutPlan =
+      body.plan === "subscription" ? "subscription" : "lifetime";
+
+    const lifetimePriceId =
+      process.env.STRIPE_LIFETIME_PRICE_ID || process.env.STRIPE_PRICE_ID;
+    const subscriptionPriceId = process.env.STRIPE_SUBSCRIPTION_PRICE_ID;
+
+    const priceId =
+      plan === "subscription" ? subscriptionPriceId : lifetimePriceId;
+
+    if (!priceId) {
+      logger.error("Checkout: Stripe price not configured", {
+        plan,
+        hasLifetimePrice: Boolean(lifetimePriceId),
+        hasSubscriptionPrice: Boolean(subscriptionPriceId),
+      });
+      return NextResponse.json(
+        { error: "Stripe price not configured" },
+        { status: 500 }
+      );
+    }
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    
+
     logger.info("Creating checkout session", {
       userId,
       email: user.primaryEmailAddress?.emailAddress,
+      plan,
       priceId,
       appUrl,
     });
 
+    const customerId = user.publicMetadata?.stripeCustomerId as string | undefined;
+
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
+      mode: plan === "subscription" ? "subscription" : "payment",
       payment_method_types: ["card"],
       line_items: [
         {
@@ -50,12 +69,25 @@ export async function POST() {
         },
       ],
       allow_promotion_codes: true,
-      customer_email: user.primaryEmailAddress?.emailAddress,
+      ...(customerId ? { customer: customerId } : {}),
+      ...(customerId ? {} : { customer_email: user.primaryEmailAddress?.emailAddress }),
+      client_reference_id: userId,
       metadata: {
         clerkUserId: userId,
+        plan,
       },
-      success_url: `${appUrl}/account?success=true`,
-      cancel_url: `${appUrl}/account?canceled=true`,
+      ...(plan === "subscription"
+        ? {
+            subscription_data: {
+              metadata: {
+                clerkUserId: userId,
+                plan,
+              },
+            },
+          }
+        : {}),
+      success_url: `${appUrl}/account?success=true&plan=${plan}`,
+      cancel_url: `${appUrl}/account?canceled=true&plan=${plan}`,
     });
 
     logger.info("Checkout session created", { sessionId: session.id });

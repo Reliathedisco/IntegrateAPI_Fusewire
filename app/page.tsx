@@ -343,9 +343,9 @@ export default function LandingPage() {
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <div className="reveal visible" style={{ textAlign: "center", marginBottom: "48px" }}>
             <div className="section-label center">Pricing</div>
-            <h2 className="section-title center">Simple, one-time pricing.</h2>
+            <h2 className="section-title center">Simple pricing.</h2>
             <p className="section-sub" style={{ margin: "0 auto" }}>
-              Pay once. Use forever. No subscriptions, no seat fees.
+              Choose monthly or lifetime. No seat fees.
             </p>
           </div>
 
@@ -395,8 +395,11 @@ export default function LandingPage() {
               />
               <div style={{ fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "12px" }}>Pro</div>
               <div style={{ marginBottom: "24px" }}>
-                <span style={{ fontFamily: "var(--serif)", fontSize: "40px", fontWeight: 400, lineHeight: 1 }}>$29</span>
-                <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--text-dim)", marginLeft: "8px" }}>one-time</span>
+                <span style={{ fontFamily: "var(--serif)", fontSize: "40px", fontWeight: 400, lineHeight: 1 }}>$9</span>
+                <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--text-dim)", marginLeft: "8px" }}>/ month</span>
+                <div style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "var(--text-dim)", marginTop: "6px" }}>
+                  or $29 lifetime
+                </div>
               </div>
               <ul className="card-features">
                 <li>Unlimited integrations</li>
