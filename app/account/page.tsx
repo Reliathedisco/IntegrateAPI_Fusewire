@@ -24,7 +24,8 @@ function AccountContent() {
     text: string;
   } | null>(null);
   const searchParams = useSearchParams();
-  const justPurchased = searchParams.get("success") === "true";
+  const justPurchased =
+    searchParams.get("upgraded") === "true" || searchParams.get("success") === "true";
 
   useEffect(() => {
     if (justPurchased) {

@@ -12,12 +12,6 @@ export default function Navigation() {
     return pathname.startsWith(path);
   };
 
-  const isLandingPage = pathname === "/";
-
-  if (isLandingPage) {
-    return null;
-  }
-
   return (
     <nav className="nav">
       <Link href="/" className="logo">
