@@ -18,15 +18,16 @@ type SubscriptionStatus =
 
 function AccountContent() {
   const { user, isLoaded } = useUser();
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<CheckoutPlan | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
   const searchParams = useSearchParams();
+  const justPurchased = searchParams.get("success") === "true";
 
   useEffect(() => {
-    if (searchParams.get("success") === "true") {
+    if (justPurchased) {
       const plan = searchParams.get("plan");
       setMessage({
         type: "success",
@@ -35,10 +36,23 @@ function AccountContent() {
             ? "Subscription active! Your account has been upgraded to Pro."
             : "Payment successful! Your account has been upgraded to Pro.",
       });
+
+      // Webhook may not have fired yet — poll for updated metadata
+      if (user && !user.publicMetadata?.isPro) {
+        let attempts = 0;
+        const interval = setInterval(async () => {
+          attempts++;
+          await user.reload();
+          if (user.publicMetadata?.isPro || attempts >= 10) {
+            clearInterval(interval);
+          }
+        }, 2000);
+        return () => clearInterval(interval);
+      }
     } else if (searchParams.get("canceled") === "true") {
       setMessage({ type: "error", text: "Payment was canceled." });
     }
-  }, [searchParams]);
+  }, [justPurchased, searchParams, user]);
 
   if (!isLoaded) {
     return (
@@ -71,7 +85,7 @@ function AccountContent() {
   const stripeCustomerId = user?.publicMetadata?.stripeCustomerId as string | undefined;
 
   const startCheckout = async (plan: CheckoutPlan) => {
-    setIsLoading(true);
+    setLoadingPlan(plan);
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -86,16 +100,16 @@ function AccountContent() {
           type: "error",
           text: data.error || "Failed to start checkout",
         });
-        setIsLoading(false);
+        setLoadingPlan(null);
       }
     } catch {
       setMessage({ type: "error", text: "Failed to start checkout" });
-      setIsLoading(false);
+      setLoadingPlan(null);
     }
   };
 
   const manageBilling = async () => {
-    setIsLoading(true);
+    setLoadingPlan("subscription");
     try {
       const response = await fetch("/api/billing-portal", { method: "POST" });
       const data = await response.json();
@@ -106,11 +120,11 @@ function AccountContent() {
           type: "error",
           text: data.error || "Failed to open billing portal",
         });
-        setIsLoading(false);
+        setLoadingPlan(null);
       }
     } catch {
       setMessage({ type: "error", text: "Failed to open billing portal" });
-      setIsLoading(false);
+      setLoadingPlan(null);
     }
   };
 
@@ -167,23 +181,23 @@ function AccountContent() {
           </>
         )}
 
-        {!isPro ? (
+        {!isPro && !justPurchased ? (
           <div className="upgradeButton" style={{ display: "grid", gap: "10px" }}>
             <button
               type="button"
               className="primary"
               onClick={() => startCheckout("subscription")}
-              disabled={isLoading}
+              disabled={loadingPlan !== null}
             >
-              {isLoading ? "Redirecting..." : "Subscribe — $9/month"}
+              {loadingPlan === "subscription" ? "Redirecting..." : "Subscribe — $9/month"}
             </button>
             <button
               type="button"
               className="signOutButton"
               onClick={() => startCheckout("lifetime")}
-              disabled={isLoading}
+              disabled={loadingPlan !== null}
             >
-              {isLoading ? "Redirecting..." : "Buy lifetime — $29"}
+              {loadingPlan === "lifetime" ? "Redirecting..." : "Buy lifetime — $29"}
             </button>
           </div>
         ) : (
@@ -192,9 +206,9 @@ function AccountContent() {
               type="button"
               className="signOutButton upgradeButton"
               onClick={manageBilling}
-              disabled={isLoading}
+              disabled={loadingPlan !== null}
             >
-              {isLoading ? "Opening..." : "Manage billing"}
+              {loadingPlan ? "Opening..." : "Manage billing"}
             </button>
           )
         )}
