@@ -408,13 +408,22 @@ export default function LandingPage() {
                 <li>Stress Test tool</li>
                 <li>Future templates included</li>
               </ul>
-              <Link
-                href="/sign-up"
-                className="btn-primary"
-                style={{ marginTop: "28px", display: "inline-block" }}
-              >
-                Get Pro →
-              </Link>
+              <div style={{ marginTop: "28px", display: "grid", gap: "10px" }}>
+                <Link
+                  href="/sign-up"
+                  className="btn-primary"
+                  style={{ display: "inline-block", textAlign: "center" }}
+                >
+                  Subscribe — $9/month
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="btn-ghost"
+                  style={{ display: "inline-block", textAlign: "center" }}
+                >
+                  Buy lifetime — $29
+                </Link>
+              </div>
             </div>
           </div>
         </div>
