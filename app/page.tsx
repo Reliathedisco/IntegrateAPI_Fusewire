@@ -377,7 +377,7 @@ export default function LandingPage() {
                 className="btn-ghost"
                 style={{ marginTop: "28px", display: "inline-block" }}
               >
-                Get started free
+                Get started free →
               </Link>
             </div>
 
@@ -410,14 +410,14 @@ export default function LandingPage() {
               </ul>
               <div style={{ marginTop: "28px", display: "grid", gap: "10px" }}>
                 <Link
-                  href="/sign-up"
+                  href="/account"
                   className="btn-primary"
                   style={{ display: "inline-block", textAlign: "center" }}
                 >
                   Subscribe — $9/month
                 </Link>
                 <Link
-                  href="/sign-up"
+                  href="/account"
                   className="btn-ghost"
                   style={{ display: "inline-block", textAlign: "center" }}
                 >
