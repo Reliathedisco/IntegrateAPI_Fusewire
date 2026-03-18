@@ -1,9 +1,8 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { regenerateCliAuthToken } from './actions';
 
 const MAX_FREE_INTEGRATIONS = 5;
 type CheckoutPlan = "lifetime" | "subscription";
@@ -34,6 +33,9 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
     searchParams.get("upgraded") === "true" || searchParams.get("success") === "true";
 
   const [cliAuthToken, setCliAuthToken] = useState<string | null>(initialCliAuthToken);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   useEffect(() => {
     if (justPurchased) {
@@ -156,20 +158,32 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
     }
   };
 
-  const handleRegenerateToken = async () => {
-    if (!userId) return;
-    const newToken = await regenerateCliAuthToken(userId);
-    setCliAuthToken(newToken);
-    alert('New token generated: ' + newToken);
-  };
-
-  const handleCopyToken = () => {
-    if (cliAuthToken) {
-      navigator.clipboard.writeText(cliAuthToken);
-      alert('CLI Auth Token copied to clipboard!');
-    } else {
-      alert('No token to copy.');
+  const handleGenerateToken = useCallback(async () => {
+    if (!userId || isGeneratingToken) return;
+    setIsGeneratingToken(true);
+    setTokenError(null);
+    try {
+      const response = await fetch("/api/cli/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to generate API key");
+      }
+      setCliAuthToken(data.authToken as string);
+    } catch (error) {
+      setTokenError(error instanceof Error ? error.message : "Failed to generate API key");
+    } finally {
+      setIsGeneratingToken(false);
     }
+  }, [isGeneratingToken, userId]);
+
+  const handleCopyToken = async () => {
+    if (!cliAuthToken) return;
+    await navigator.clipboard.writeText(cliAuthToken);
+    setToastMessage("Copied!");
+    setTimeout(() => setToastMessage(null), 1500);
   };
 
   return (
@@ -272,10 +286,11 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
               </p>
               <button
                 type="button"
-                onClick={handleRegenerateToken}
+                onClick={handleGenerateToken}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+                disabled={isGeneratingToken}
               >
-                Regenerate token
+                {isGeneratingToken ? "Generating..." : "Regenerate API Key"}
               </button>
               <button
                 type="button"
@@ -286,8 +301,35 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
               </button>
             </>
           ) : (
-            <p>No CLI auth token found. Generate one to get started.</p>
+            <div>
+              <p className="mb-3">No CLI auth token found. Generate one to get started.</p>
+              <button
+                type="button"
+                onClick={handleGenerateToken}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                disabled={isGeneratingToken}
+              >
+                {isGeneratingToken ? "Generating..." : "Generate API Key"}
+              </button>
+            </div>
           )}
+          {toastMessage ? (
+            <div
+              style={{
+                marginTop: "12px",
+                padding: "8px 12px",
+                borderRadius: "6px",
+                background: "#064e3b",
+                color: "#6ee7b7",
+                display: "inline-block",
+              }}
+            >
+              {toastMessage}
+            </div>
+          ) : null}
+          {tokenError ? (
+            <p style={{ color: "#fca5a5", marginTop: "12px" }}>{tokenError}</p>
+          ) : null}
         </div>
       </section>
     </>
