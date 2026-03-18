@@ -9,11 +9,16 @@ interface CliAuthToken {
 }
 
 export async function getCliAuthToken(userId: string) {
-  const result = await client.query<CliAuthToken>(
-    'SELECT auth_token FROM cli_auth_tokens WHERE user_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT 1',
-    [userId, 'verified']
-  );
-  return result.rows[0]?.auth_token || null;
+  try {
+    const result = await client.query<CliAuthToken>(
+      "SELECT auth_token FROM cli_auth_tokens WHERE user_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT 1",
+      [userId, "verified"]
+    );
+    return result.rows[0]?.auth_token || null;
+  } catch (error) {
+    console.error("Account: failed to load CLI auth token", error);
+    return null;
+  }
 }
 
 export async function regenerateCliAuthToken(userId: string) {
