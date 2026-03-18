@@ -48,10 +48,16 @@ export async function POST(req: Request) {
     }
 
     const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
       process.env.NEXT_PUBLIC_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-      "http://localhost:3000";
+      process.env.NEXT_PUBLIC_APP_URL ||
+      new URL(req.url).origin;
+
+    const successUrl = new URL("/account", appUrl);
+    successUrl.searchParams.set("upgraded", "true");
+    successUrl.searchParams.set("plan", plan);
+
+    const cancelUrl = new URL("/", appUrl);
+    cancelUrl.hash = "pricing";
 
     logger.info("Creating checkout session", {
       userId,
@@ -90,8 +96,8 @@ export async function POST(req: Request) {
             },
           }
         : {}),
-      success_url: `${appUrl}/account?upgraded=true&plan=${plan}`,
-      cancel_url: `${appUrl}/#pricing`,
+      success_url: successUrl.toString(),
+      cancel_url: cancelUrl.toString(),
     });
 
     logger.info("Checkout session created", { sessionId: session.id });

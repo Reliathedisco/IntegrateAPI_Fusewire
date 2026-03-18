@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 const terminalLines = [
   { text: "$ npx integrateapi login", class: "", delay: 0 },
@@ -148,6 +148,51 @@ const fileTreeItems = [
 ];
 
 export default function LandingPage() {
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [newsletterMessage, setNewsletterMessage] = useState<string | null>(null);
+
+  const submitNewsletter = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const email = newsletterEmail.trim();
+    if (!email) return;
+
+    setNewsletterStatus("loading");
+    setNewsletterMessage(null);
+
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = (await res.json().catch(() => ({}))) as
+        | { ok?: boolean; status?: "subscribed" | "already_subscribed"; error?: string }
+        | undefined;
+
+      if (!res.ok || !data?.ok) {
+        setNewsletterStatus("error");
+        setNewsletterMessage(data?.error || "Couldn’t subscribe. Please try again.");
+        return;
+      }
+
+      setNewsletterStatus("success");
+      setNewsletterEmail("");
+      setNewsletterMessage(
+        data.status === "already_subscribed"
+          ? "You’re already subscribed."
+          : "Subscribed — check your inbox."
+      );
+    } catch {
+      setNewsletterStatus("error");
+      setNewsletterMessage("Couldn’t subscribe. Please try again.");
+    }
+  };
+
   return (
     <div className="landing">
       <div className="grid-bg"></div>
@@ -330,16 +375,53 @@ export default function LandingPage() {
             <li>Integration strategies</li>
             <li>New developer tools</li>
           </ul>
-          <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" className="newsletter-input" placeholder="you@company.com" />
-            <button type="submit" className="newsletter-btn">Subscribe</button>
+          <form className="newsletter-form" onSubmit={submitNewsletter}>
+            <input
+              type="email"
+              className="newsletter-input"
+              placeholder="you@company.com"
+              value={newsletterEmail}
+              onChange={(e) => {
+                setNewsletterEmail(e.target.value);
+                if (newsletterStatus !== "idle") {
+                  setNewsletterStatus("idle");
+                  setNewsletterMessage(null);
+                }
+              }}
+              autoComplete="email"
+              inputMode="email"
+              required
+            />
+            <button
+              type="submit"
+              className="newsletter-btn"
+              disabled={newsletterStatus === "loading"}
+            >
+              {newsletterStatus === "loading" ? "Sending..." : "Subscribe"}
+            </button>
           </form>
+          {newsletterMessage && (
+            <p
+              className={`newsletter-message ${
+                newsletterStatus === "error" ? "error" : "success"
+              }`}
+            >
+              {newsletterMessage}
+            </p>
+          )}
           <p className="newsletter-note">Weekly. No spam. Unsubscribe anytime.</p>
         </div>
       </section>
 
       {/* Pricing */}
-      <section style={{ padding: "80px 40px", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
+      <section
+        id="pricing"
+        style={{
+          padding: "80px 40px",
+          borderTop: "1px solid var(--border)",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <div className="reveal visible" style={{ textAlign: "center", marginBottom: "48px" }}>
             <div className="section-label center">Pricing</div>

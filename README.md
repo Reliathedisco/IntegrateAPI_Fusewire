@@ -25,9 +25,11 @@ IntegrateAPI installs production-ready TypeScript integration code directly into
 | `/stacks` | Stack Builder -- preset bundles (SaaS Starter, AI SaaS, Marketplace, Internal Tool) |
 | `/docs` | CLI reference (login, list, add, upgrade, account, scan, stack, doctor) |
 | `/account` | Protected -- user plan, usage, and Stripe upgrade/billing |
+| `/dashboard` | Redirects to `/account` |
 | `/sign-in` | Clerk sign-in |
 | `/sign-up` | Clerk sign-up |
 | `/api/checkout` | Creates a Stripe Checkout session |
+| `/api/newsletter` | Subscribes an email to FuseWire (Resend) |
 | `/api/webhooks/stripe` | Handles Stripe `checkout.session.completed` events |
 
 ## Getting Started
@@ -46,7 +48,9 @@ Open [http://localhost:3000](http://localhost:3000).
 Copy `.env.example` and fill in real values:
 
 ```
-NEXT_PUBLIC_APP_URL=https://your-domain.com
+NEXT_PUBLIC_URL=https://your-domain.com
+# Optional legacy fallback:
+# NEXT_PUBLIC_APP_URL=https://your-domain.com
 
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
@@ -57,9 +61,18 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_ID=price_...
+
+RESEND_API_KEY=re_...
+RESEND_FUSEWIRE_SEGMENT_ID=78261eea-8f8b-4381-83c6-79fa7120f1cf
+NEWSLETTER_FROM="FuseWire <newsletter@your-domain.com>"
+NEWSLETTER_REPLY_TO="hello@your-domain.com"
 ```
 
-`NEXT_PUBLIC_APP_URL` is used for Stripe checkout redirect URLs. It must be set to your production domain in deployment, otherwise Stripe redirects will point to localhost.
+`NEXT_PUBLIC_URL` (or `NEXT_PUBLIC_APP_URL`) is used for Stripe Checkout redirect URLs and the billing portal return URL. Set it to your production domain in deployment so Stripe redirects return users to the correct site.
+
+FuseWire newsletter signups on the homepage are handled via Resend using the `/api/newsletter` route.
+
+Clerk will show a **Development mode** badge when you use test keys. Before go-live, create a production Clerk instance and set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` to production keys in Vercel.
 
 ## Project Structure
 
@@ -80,10 +93,11 @@ app/
   sign-up/              Clerk sign-up
   api/
     checkout/route.ts       Stripe Checkout session creation
+    newsletter/route.ts     FuseWire newsletter signup (Resend)
     webhooks/stripe/route.ts Stripe webhook handler
 
 components/
-  Navigation.tsx        Global nav bar (hidden on landing page)
+  Navigation.tsx        Global nav bar
   IntegrationCard.tsx   Reusable integration card
   CodeBlock.tsx         Code display with copy button
 
