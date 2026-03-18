@@ -21,7 +21,7 @@ IntegrateAPI installs production-ready TypeScript integration code directly into
 | `/integrations` | Full searchable catalog (38 integrations, 11 categories) |
 | `/integrations/[slug]` | Individual integration detail (install command, env vars, example code) |
 | `/registry` | Alternative integration browser with category filters and inline modals |
-| `/stress-test` | Landing page for the `stress-test` CLI command |
+| `/stress-test` | Landing page for the `integrateapi stress-test` CLI command |
 | `/stacks` | Stack Builder -- preset bundles (SaaS Starter, AI SaaS, Marketplace, Internal Tool) |
 | `/docs` | CLI reference (login, list, add, upgrade, account, scan, stack, doctor) |
 | `/account` | Protected -- user plan, usage, and Stripe upgrade/billing |
