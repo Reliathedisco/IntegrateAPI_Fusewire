@@ -306,7 +306,7 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
               <button
                 type="button"
                 onClick={handleGenerateToken}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
                 disabled={isGeneratingToken}
               >
                 {isGeneratingToken ? "Generating..." : "Generate API Key"}
