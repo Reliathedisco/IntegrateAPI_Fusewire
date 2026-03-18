@@ -37,13 +37,9 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
 
   useEffect(() => {
     if (justPurchased) {
-      const plan = searchParams.get("plan");
       setMessage({
         type: "success",
-        text:
-          plan === "subscription"
-            ? "Subscription active! Your account has been upgraded to Pro."
-            : "Upgrade complete! Your account has been upgraded to Pro.",
+        text: "You're now on Pro — welcome!",
       });
 
       if (user) {
