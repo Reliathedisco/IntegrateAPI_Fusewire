@@ -24,7 +24,8 @@ const makeIntegration = (
   features: string[],
   envVars: { name: string; description?: string }[],
   exampleCode?: string,
-  comingSoon?: boolean
+  comingSoon?: boolean,
+  cliCommand?: string
 ): Integration => ({
   id,
   name,
@@ -33,7 +34,8 @@ const makeIntegration = (
   tier,
   description,
   shortDescription: shortDesc,
-  installCommand: `npx integrateapi add ${id}`,
+  installCommand: `npx integrateapi add ${cliCommand ?? id}`,
+  cliCommand,
   features,
   envVars,
   exampleCode,
@@ -78,7 +80,9 @@ export const integrations: Integration[] = [
       { name: "NEXT_PUBLIC_SUPABASE_URL", description: "Project URL" },
       { name: "NEXT_PUBLIC_SUPABASE_ANON_KEY", description: "Anon public key" },
     ],
-    'import { createClient } from "@/lib/integrations/supabase"\nconst supabase = createClient()'
+    'import { createClient } from "@/lib/integrations/supabase"\nconst supabase = createClient()',
+    undefined,
+    "supabase"
   ),
   makeIntegration(
     "vercel",

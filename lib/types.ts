@@ -9,6 +9,7 @@ export interface Integration {
   description: string
   shortDescription: string
   installCommand: string
+  cliCommand?: string
   features: string[]
   envVars: { name: string; description?: string }[]
   exampleCode?: string
