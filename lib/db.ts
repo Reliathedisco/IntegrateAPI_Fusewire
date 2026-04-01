@@ -1,9 +1,11 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-const client = new Client({
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 1,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
-client.connect();
-
-export default client;
+export default pool;
