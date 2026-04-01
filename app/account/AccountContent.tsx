@@ -6,15 +6,20 @@ import { useSearchParams } from "next/navigation";
 
 const MAX_FREE_INTEGRATIONS = 5;
 
-export default function AccountContent({ initialCliAuthToken, userId }) {
+interface AccountContentProps {
+  initialCliAuthToken: string | null;
+  userId: string;
+}
+
+export default function AccountContent({ initialCliAuthToken, userId }: AccountContentProps) {
   const { user, isLoaded } = useUser();
 
-  const [loadingPlan, setLoadingPlan] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [cliAuthToken, setCliAuthToken] = useState(initialCliAuthToken);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [cliAuthToken, setCliAuthToken] = useState<string | null>(initialCliAuthToken);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
-  const [tokenError, setTokenError] = useState(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const justPurchased =
@@ -53,7 +58,7 @@ export default function AccountContent({ initialCliAuthToken, userId }) {
     user?.publicMetadata?.stripeCustomerId as string | undefined;
 
   // ===== ACTIONS =====
-  const startCheckout = async (plan) => {
+  const startCheckout = async (plan: string) => {
     setLoadingPlan(plan);
 
     const res = await fetch("/api/checkout", {
