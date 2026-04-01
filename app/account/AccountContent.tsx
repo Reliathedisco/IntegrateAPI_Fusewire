@@ -6,15 +6,20 @@ import { useSearchParams } from "next/navigation";
 
 const MAX_FREE_INTEGRATIONS = 5;
 
-export default function AccountContent({ initialCliAuthToken, userId }: { initialCliAuthToken: string | null; userId: string }) {
+interface AccountContentProps {
+  initialCliAuthToken: string | null;
+  userId: string;
+}
+
+export default function AccountContent({ initialCliAuthToken, userId }: AccountContentProps) {
   const { user, isLoaded } = useUser();
 
-  const [loadingPlan, setLoadingPlan] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [cliAuthToken, setCliAuthToken] = useState(initialCliAuthToken);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [cliAuthToken, setCliAuthToken] = useState<string | null>(initialCliAuthToken);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
-  const [tokenError, setTokenError] = useState(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const justPurchased =
@@ -53,7 +58,7 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
     user?.publicMetadata?.stripeCustomerId as string | undefined;
 
   // ===== ACTIONS =====
-  const startCheckout = async (plan) => {
+  const startCheckout = async (plan: string) => {
     setLoadingPlan(plan);
 
     const res = await fetch("/api/checkout", {
@@ -125,103 +130,90 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
 
   // ===== UI =====
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
+    <div className="accountContent">
 
-      {/* ACCOUNT */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
+      {/* ACCOUNT INFO CARD */}
+      <div className="accountInfoCard">
 
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-1">email</p>
-          <p className="text-white">
-            {user?.primaryEmailAddress?.emailAddress}
-          </p>
+        <div className="accountRow">
+          <p className="accountLabel">email</p>
+          <p className="accountValue">{user?.primaryEmailAddress?.emailAddress}</p>
         </div>
 
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-1">plan</p>
-          <span className={`inline-block px-3 py-1 text-xs rounded-full ${
-            isPro
-              ? "bg-purple-600/20 text-purple-300 border border-purple-600/40"
-              : "bg-gray-700 text-gray-300"
-          }`}>
+        <div className="accountRow">
+          <p className="accountLabel">plan</p>
+          <span className={`planBadge ${isPro ? "pro" : "free"}`}>
             {planLabel}
           </span>
         </div>
 
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-2">integrations</p>
-
+        <div className="accountRow">
+          <p className="accountLabel">integrations</p>
           {isPro ? (
-            <p className="text-white">unlimited</p>
+            <p className="accountValue">unlimited</p>
           ) : (
-            <div className="space-y-2">
-              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div className="usageBar">
+              <div className="usageBarTrack">
                 <div
-                  className="h-full bg-purple-500"
+                  className="usageBarFill"
                   style={{
                     width: `${Math.min((usedIntegrations / MAX_FREE_INTEGRATIONS) * 100, 100)}%`,
                   }}
                 />
               </div>
-              <p className="text-xs text-gray-400">
+              <p className="usageText">
                 {usedIntegrations} / {MAX_FREE_INTEGRATIONS}
               </p>
             </div>
           )}
         </div>
 
-        <div className="pt-2">
+        <div className="accountActions">
           {!isPro && !justPurchased ? (
-            <div className="flex gap-2">
+            <div className="accountButtonRow">
               <button
                 onClick={() => startCheckout("subscription")}
-                className="px-4 py-2 text-sm rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition"
+                disabled={loadingPlan !== null}
+                className="btn-primary"
               >
-                subscribe
+                {loadingPlan === "subscription" ? "redirecting..." : "subscribe"}
               </button>
-
               <button
                 onClick={() => startCheckout("lifetime")}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-700 hover:bg-gray-800 text-gray-300 transition"
+                disabled={loadingPlan !== null}
+                className="btn-ghost"
               >
-                lifetime
+                {loadingPlan === "lifetime" ? "redirecting..." : "lifetime"}
               </button>
             </div>
           ) : (
             stripeCustomerId && (
               <button
                 onClick={manageBilling}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-700 hover:bg-gray-800 text-gray-300 transition"
+                disabled={loadingPlan !== null}
+                className="btn-ghost"
               >
-                manage billing
+                {loadingPlan !== null ? "redirecting..." : "manage billing"}
               </button>
             )
           )}
         </div>
       </div>
 
-      {/* CLI */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-white">CLI Access</h2>
+      {/* CLI SECTION */}
+      <section className="cliSection">
+        <h2 className="cliSectionTitle">CLI Access</h2>
 
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5 space-y-4">
-
+        <div className="cliCard">
           {cliAuthToken ? (
             <>
               <div>
-                <p className="text-xs text-gray-400 mb-2 uppercase">
-                  api key
-                </p>
-
-                <div className="flex items-center justify-between bg-black/40 border border-gray-700 rounded-lg px-3 py-2">
-                  <code className="text-sm text-gray-200">
+                <p className="accountLabel">api key</p>
+                <div className="apiKeyBox">
+                  <code className="apiKeyCode">
                     sk_live_****...{cliAuthToken.slice(-4)}
                   </code>
-
-                  <button
-                    onClick={handleCopyToken}
-                    className="text-xs text-gray-400 hover:text-white transition"
-                  >
+                  <button onClick={handleCopyToken} className="apiKeyCopy">
                     copy
                   </button>
                 </div>
@@ -230,13 +222,13 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
               <button
                 onClick={handleGenerateToken}
                 disabled={isGeneratingToken}
-                className="px-4 py-2 text-sm rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition flex items-center gap-2"
+                className="btn-primary"
               >
                 {isGeneratingToken ? (
-                  <>
-                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="btnSpinner">
+                    <span className="spinnerIcon" />
                     generating...
-                  </>
+                  </span>
                 ) : (
                   "regenerate key"
                 )}
@@ -244,27 +236,25 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
             </>
           ) : (
             <div>
-              <p className="text-sm text-gray-400 mb-3">
+              <p className="cliNoKey">
                 no api key yet — generate one to connect the cli
               </p>
-
               <button
                 onClick={handleGenerateToken}
-                className="px-4 py-2 text-sm rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition"
+                disabled={isGeneratingToken}
+                className="btn-primary"
               >
-                generate api key
+                {isGeneratingToken ? "generating..." : "generate api key"}
               </button>
             </div>
           )}
 
           {toastMessage && (
-            <div className="text-xs text-green-400 bg-green-900/40 border border-green-700 px-3 py-2 rounded-md inline-block">
-              {toastMessage}
-            </div>
+            <div className="cliToast">{toastMessage}</div>
           )}
 
           {tokenError && (
-            <p className="text-sm text-red-400">{tokenError}</p>
+            <p className="cliError">{tokenError}</p>
           )}
         </div>
       </section>
