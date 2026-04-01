@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { randomUUID } from "crypto";
-import client from "@/lib/db";
+import pool from "@/lib/db";
 
 export async function POST() {
-  const { userId } = await auth();
+  let userId: string | null = null;
+
+  try {
+    const session = await auth();
+    userId = session.userId;
+  } catch {
+    return NextResponse.json({ error: "Auth unavailable" }, { status: 503 });
+  }
 
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -12,9 +19,12 @@ export async function POST() {
 
   const authToken = randomUUID();
   const token = randomUUID();
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365); // 1 year
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365);
 
+  let client;
   try {
+    client = await pool.connect();
+
     await client.query(
       "UPDATE cli_auth_tokens SET status = 'expired' WHERE user_id = $1 AND status = 'verified'",
       [userId]
@@ -28,6 +38,11 @@ export async function POST() {
     return NextResponse.json({ authToken });
   } catch (error) {
     console.error("CLI regenerate: failed to create token", error);
-    return NextResponse.json({ error: "Failed to generate API key" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to generate API key" },
+      { status: 500 }
+    );
+  } finally {
+    if (client) client.release();
   }
 }
