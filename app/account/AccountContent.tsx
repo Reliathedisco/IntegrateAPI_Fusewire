@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 const MAX_FREE_INTEGRATIONS = 5;
 
-export default function AccountContent({ initialCliAuthToken, userId }) {
+export default function AccountContent({ initialCliAuthToken, userId }: { initialCliAuthToken: string | null; userId: string }) {
   const { user, isLoaded } = useUser();
 
   const [loadingPlan, setLoadingPlan] = useState(null);
