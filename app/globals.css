@@ -599,6 +599,158 @@ section h2 {
   margin-top: 20px;
 }
 
+/* ── Account Page Content Layout ─────────────────────────────────────────── */
+
+.accountContent {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: 8px;
+}
+
+.accountInfoCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.accountRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.accountLabel {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.accountValue {
+  color: var(--text);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.accountActions {
+  padding-top: 4px;
+}
+
+.accountButtonRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── CLI Section ──────────────────────────────────────────────────────────── */
+
+.cliSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cliSectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  font-family: var(--sans);
+}
+
+.cliCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.apiKeyBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+
+.apiKeyCode {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--text-mid);
+}
+
+.apiKeyCopy {
+  background: transparent;
+  border: none;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.apiKeyCopy:hover {
+  color: var(--accent);
+}
+
+.cliNoKey {
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  margin: 0 0 16px;
+}
+
+.cliToast {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid rgba(61, 214, 140, 0.3);
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.cliError {
+  font-size: 0.85rem;
+  color: #f87171;
+  margin: 0;
+}
+
+.btnSpinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinnerIcon {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 .emptyState {
   color: var(--text-dim);
   text-align: center;
