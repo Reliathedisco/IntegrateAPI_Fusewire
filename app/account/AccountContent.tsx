@@ -1,337 +1,165 @@
-"use client";
+return (
+  <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
 
-import { useUser } from "@clerk/nextjs";
-import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-
-const MAX_FREE_INTEGRATIONS = 5;
-type CheckoutPlan = "lifetime" | "subscription";
-type SubscriptionStatus =
-  | "incomplete"
-  | "incomplete_expired"
-  | "trialing"
-  | "active"
-  | "past_due"
-  | "canceled"
-  | "unpaid"
-  | "paused";
-
-interface AccountContentProps {
-  initialCliAuthToken: string | null;
-  userId: string;
-}
-
-export default function AccountContent({ initialCliAuthToken, userId }: AccountContentProps) {
-  const { user, isLoaded } = useUser();
-  const [loadingPlan, setLoadingPlan] = useState<CheckoutPlan | null>(null);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-  const searchParams = useSearchParams();
-  const justPurchased =
-    searchParams.get("upgraded") === "true" || searchParams.get("success") === "true";
-
-  const [cliAuthToken, setCliAuthToken] = useState<string | null>(initialCliAuthToken);
-  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [tokenError, setTokenError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (justPurchased) {
-      setMessage({
-        type: "success",
-        text: "You're now on Pro — welcome!",
-      });
-
-      if (user) {
-        const hasLifetimePro = user.publicMetadata?.hasLifetimePro === true;
-        const subscriptionStatus = user.publicMetadata?.subscriptionStatus as
-          | SubscriptionStatus
-          | undefined;
-        const subscriptionIsPro =
-          subscriptionStatus === "active" ||
-          subscriptionStatus === "trialing" ||
-          subscriptionStatus === "past_due";
-        const isPro =
-          hasLifetimePro || subscriptionIsPro || user.publicMetadata?.isPro === true;
-
-        if (isPro) return;
-
-        let attempts = 0;
-        const interval = setInterval(async () => {
-          attempts++;
-          await user.reload();
-          const hasLifetimePro = user.publicMetadata?.hasLifetimePro === true;
-          const subscriptionStatus = user.publicMetadata?.subscriptionStatus as
-            | SubscriptionStatus
-            | undefined;
-          const subscriptionIsPro =
-            subscriptionStatus === "active" ||
-            subscriptionStatus === "trialing" ||
-            subscriptionStatus === "past_due";
-          const isPro =
-            hasLifetimePro || subscriptionIsPro || user.publicMetadata?.isPro === true;
-
-          if (isPro || attempts >= 10) {
-            clearInterval(interval);
-          }
-        }, 2000);
-        return () => clearInterval(interval);
-      }
-    } else if (searchParams.get("canceled") === "true") {
-      setMessage({ type: "error", text: "Payment was canceled." });
-    }
-  }, [justPurchased, searchParams, user]);
-
-  if (!isLoaded) {
-    return (
-      <div className="accountCard">
-        <p>Loading...</p>
+    {/* Top Message */}
+    {message && (
+      <div className={`rounded-lg px-4 py-3 text-sm border ${
+        message.type === "success"
+          ? "bg-green-900/40 border-green-700 text-green-300"
+          : "bg-red-900/40 border-red-700 text-red-300"
+      }`}>
+        {message.text}
       </div>
-    );
-  }
+    )}
 
-  const hasLifetimePro = user?.publicMetadata?.hasLifetimePro === true;
-  const subscriptionStatus = user?.publicMetadata?.subscriptionStatus as
-    | SubscriptionStatus
-    | undefined;
+    {/* ACCOUNT CARD */}
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
 
-  const subscriptionIsPro =
-    subscriptionStatus === "active" ||
-    subscriptionStatus === "trialing" ||
-    subscriptionStatus === "past_due";
+      <div>
+        <p className="text-xs text-gray-400 uppercase mb-1">email</p>
+        <p className="text-white">{user?.primaryEmailAddress?.emailAddress}</p>
+      </div>
 
-  const isPro = hasLifetimePro || subscriptionIsPro || user?.publicMetadata?.isPro === true;
-  const usedIntegrations =
-    (user?.publicMetadata?.usedIntegrations as number) || 0;
-  const planLabel = hasLifetimePro
-    ? "Pro (Lifetime)"
-    : subscriptionIsPro
-      ? "Pro (Subscription)"
-      : isPro
-        ? "Pro"
-        : "Free";
-  const stripeCustomerId = user?.publicMetadata?.stripeCustomerId as string | undefined;
+      <div>
+        <p className="text-xs text-gray-400 uppercase mb-1">plan</p>
+        <span className={`inline-block px-3 py-1 text-xs rounded-full ${
+          isPro
+            ? "bg-purple-600/20 text-purple-300 border border-purple-600/40"
+            : "bg-gray-700 text-gray-300"
+        }`}>
+          {planLabel}
+        </span>
+      </div>
 
-  const startCheckout = async (plan: CheckoutPlan) => {
-    setLoadingPlan(plan);
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Failed to start checkout",
-        });
-        setLoadingPlan(null);
-      }
-    } catch {
-      setMessage({ type: "error", text: "Failed to start checkout" });
-      setLoadingPlan(null);
-    }
-  };
+      <div>
+        <p className="text-xs text-gray-400 uppercase mb-2">integrations</p>
 
-  const manageBilling = async () => {
-    setLoadingPlan("subscription");
-    try {
-      const response = await fetch("/api/billing-portal", { method: "POST" });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Failed to open billing portal",
-        });
-        setLoadingPlan(null);
-      }
-    } catch {
-      setMessage({ type: "error", text: "Failed to open billing portal" });
-      setLoadingPlan(null);
-    }
-  };
-
-  const handleGenerateToken = useCallback(async () => {
-    if (!userId || isGeneratingToken) return;
-    setIsGeneratingToken(true);
-    setTokenError(null);
-    try {
-      const response = await fetch("/api/cli/regenerate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to generate API key");
-      }
-      setCliAuthToken(data.authToken as string);
-    } catch (error) {
-      setTokenError(error instanceof Error ? error.message : "Failed to generate API key");
-    } finally {
-      setIsGeneratingToken(false);
-    }
-  }, [isGeneratingToken, userId]);
-
-  const handleCopyToken = async () => {
-    if (!cliAuthToken) return;
-    await navigator.clipboard.writeText(cliAuthToken);
-    setToastMessage("Copied!");
-    setTimeout(() => setToastMessage(null), 1500);
-  };
-
-  return (
-    <>
-      {message && (
-        <div
-          style={{
-            padding: "12px 16px",
-            marginBottom: "20px",
-            borderRadius: "8px",
-            background: message.type === "success" ? "#064e3b" : "#7f1d1d",
-            color: message.type === "success" ? "#6ee7b7" : "#fca5a5",
-            maxWidth: "400px",
-          }}
-        >
-          {message.text}
-        </div>
-      )}
-
-      <div className="accountCard">
-        <p>
-          <strong>Email</strong>
-        </p>
-        <p>{user?.primaryEmailAddress?.emailAddress}</p>
-
-        <p>
-          <strong>Plan</strong>
-        </p>
-        <p>
-          <span className={`planBadge ${isPro ? "pro" : "free"}`}>{planLabel}</span>
-        </p>
-
-        <p>
-          <strong>Integrations</strong>
-        </p>
         {isPro ? (
-          <p>Unlimited integrations</p>
+          <p className="text-white">unlimited</p>
         ) : (
-          <>
-            <div className="usageBar">
-              <div className="usageBarTrack">
-                <div
-                  className="usageBarFill"
-                  style={{
-                    width: `${Math.min((usedIntegrations / MAX_FREE_INTEGRATIONS) * 100, 100)}%`,
-                  }}
-                />
-              </div>
-              <p className="usageText">
-                {usedIntegrations} / {MAX_FREE_INTEGRATIONS} integrations used
-              </p>
+          <div className="space-y-2">
+            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-purple-500"
+                style={{
+                  width: `${Math.min((usedIntegrations / MAX_FREE_INTEGRATIONS) * 100, 100)}%`,
+                }}
+              />
             </div>
-          </>
+            <p className="text-xs text-gray-400">
+              {usedIntegrations} / {MAX_FREE_INTEGRATIONS}
+            </p>
+          </div>
         )}
+      </div>
 
+      {/* Billing */}
+      <div className="pt-2">
         {!isPro && !justPurchased ? (
-          <div className="upgradeButton" style={{ display: "grid", gap: "10px" }}>
+          <div className="flex gap-2">
             <button
-              type="button"
-              className="primary"
               onClick={() => startCheckout("subscription")}
               disabled={loadingPlan !== null}
+              className="px-4 py-2 text-sm rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition"
             >
-              {loadingPlan === "subscription" ? "Redirecting..." : "Subscribe — $9/month"}
+              {loadingPlan === "subscription" ? "loading..." : "subscribe"}
             </button>
+
             <button
-              type="button"
-              className="signOutButton"
               onClick={() => startCheckout("lifetime")}
               disabled={loadingPlan !== null}
+              className="px-4 py-2 text-sm rounded-lg border border-gray-700 hover:bg-gray-800 text-gray-300 transition"
             >
-              {loadingPlan === "lifetime" ? "Redirecting..." : "Buy lifetime — $29"}
+              {loadingPlan === "lifetime" ? "loading..." : "lifetime"}
             </button>
           </div>
         ) : (
           stripeCustomerId && (
             <button
-              type="button"
-              className="signOutButton upgradeButton"
               onClick={manageBilling}
               disabled={loadingPlan !== null}
+              className="px-4 py-2 text-sm rounded-lg border border-gray-700 hover:bg-gray-800 text-gray-300 transition"
             >
-              {loadingPlan ? "Opening..." : "Manage billing"}
+              {loadingPlan ? "opening..." : "manage billing"}
             </button>
           )
         )}
       </div>
+    </div>
 
-      {/* CLI Authentication Section */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">CLI Authentication</h2>
-        <div className="bg-gray-800 p-4 rounded-lg">
-          {cliAuthToken ? (
-            <>
-              <p className="mb-2">
-                Current auth token:
-                <code className="bg-gray-700 p-1 rounded ml-2">
+    {/* CLI SECTION (your upgraded version stays here) */}
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold text-white">
+        CLI Access
+      </h2>
+
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5 shadow-sm space-y-4">
+
+        {cliAuthToken ? (
+          <>
+            <div>
+              <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">
+                api key
+              </p>
+
+              <div className="flex items-center justify-between bg-black/40 border border-gray-700 rounded-lg px-3 py-2">
+                <code className="text-sm text-gray-200">
                   sk_live_****...{cliAuthToken.slice(-4)}
                 </code>
-              </p>
+
+                <button
+                  onClick={handleCopyToken}
+                  className="text-xs text-gray-400 hover:text-white transition cursor-pointer"
+                >
+                  copy
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               <button
-                type="button"
                 onClick={handleGenerateToken}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
                 disabled={isGeneratingToken}
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white transition shadow-sm disabled:opacity-50 flex items-center gap-2"
               >
-                {isGeneratingToken ? "Generating..." : "Regenerate API Key"}
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyToken}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Copy
-              </button>
-            </>
-          ) : (
-            <div>
-              <p className="mb-3">No CLI auth token found. Generate one to get started.</p>
-              <button
-                type="button"
-                onClick={handleGenerateToken}
-                className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-                disabled={isGeneratingToken}
-              >
-                {isGeneratingToken ? "Generating..." : "Generate API Key"}
+                {isGeneratingToken ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    generating...
+                  </>
+                ) : (
+                  "regenerate key"
+                )}
               </button>
             </div>
-          )}
-          {toastMessage ? (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "8px 12px",
-                borderRadius: "6px",
-                background: "#064e3b",
-                color: "#6ee7b7",
-                display: "inline-block",
-              }}
+          </>
+        ) : (
+          <div>
+            <p className="text-sm text-gray-400 mb-3">
+              no api key yet — generate one to connect the cli
+            </p>
+
+            <button
+              onClick={handleGenerateToken}
+              disabled={isGeneratingToken}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition"
             >
-              {toastMessage}
-            </div>
-          ) : null}
-          {tokenError ? (
-            <p style={{ color: "#fca5a5", marginTop: "12px" }}>{tokenError}</p>
-          ) : null}
-        </div>
-      </section>
-    </>
-  );
-}
+              generate api key
+            </button>
+          </div>
+        )}
+
+        {toastMessage && (
+          <div className="text-xs text-green-400 bg-green-900/40 border border-green-700 px-3 py-2 rounded-md inline-block">
+            {toastMessage}
+          </div>
+        )}
+
+        {tokenError && (
+          <p className="text-sm text-red-400">{tokenError}</p>
+        )}
+      </div>
+    </section>
+
+  </div>
+);
