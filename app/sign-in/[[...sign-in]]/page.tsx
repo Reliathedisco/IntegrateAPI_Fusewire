@@ -1,14 +1,24 @@
 import { SignIn } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
-export default function SignInPage() {
+type SignInPageProps = {
+  searchParams: Promise<{
+    redirect?: string;
+    redirect_url?: string;
+  }>;
+};
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
+  const params = await searchParams;
+  const redirectTarget = params?.redirect || params?.redirect_url || "/account";
+
+  if (params?.redirect && !params?.redirect_url) {
+    redirect(`/sign-in?redirect_url=${encodeURIComponent(redirectTarget)}`);
+  }
+
   return (
     <div className="container" style={{ display: "flex", justifyContent: "center", paddingTop: "60px" }}>
-      <div style={{ maxWidth: "420px", width: "100%" }}>
-        <p style={{ color: "#d1d5db", marginBottom: "16px" }}>
-          First time signing in? Use 'Email code' instead of password — we recently upgraded our auth system.
-        </p>
-        <SignIn />
-      </div>
+      <SignIn redirectUrl={redirectTarget} afterSignInUrl={redirectTarget} />
     </div>
   );
 }

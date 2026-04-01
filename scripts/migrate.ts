@@ -1,8 +1,13 @@
-import client from '../lib/db';
+import { initDb } from '../lib/db';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
 async function runMigrations() {
+  const client = await initDb();
+  if (!client) {
+    throw new Error('DATABASE_URL not set - cannot run migrations');
+  }
+
   try {
     const migrationsDir = path.join(__dirname, '../migrations');
     const files = await fs.readdir(migrationsDir);

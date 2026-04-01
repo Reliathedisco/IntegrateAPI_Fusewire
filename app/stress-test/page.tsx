@@ -70,7 +70,7 @@ export default function StressTestPage() {
           <p className="stress-hero-sub">
             Analyze your SaaS architecture for scaling risks, security gaps, and integration issues before they become production incidents.
           </p>
-          <CommandBlock command="integrateapi stress-test" />
+          <CommandBlock command="npx integrateapi add stripe" />
         </div>
       </section>
 
@@ -119,7 +119,7 @@ export default function StressTestPage() {
             <div className="stress-step-num">1</div>
             <h3>Run the Command</h3>
             <p>Execute the stress test CLI in your project root directory.</p>
-            <CommandBlock command="integrateapi stress-test" />
+            <CommandBlock command="npx integrateapi add stripe" />
           </div>
           <div className="stress-step">
             <div className="stress-step-num">2</div>
@@ -142,10 +142,10 @@ export default function StressTestPage() {
             <div className="t-dot red"></div>
             <div className="t-dot yellow"></div>
             <div className="t-dot green"></div>
-            <span>integrateapi stress-test</span>
+            <span>integrateapi add stripe</span>
           </div>
           <div className="stress-terminal-body">
-            <pre>{`$ integrateapi stress-test
+            <pre>{`$ npx integrateapi add stripe
 
 🔍 Analyzing your SaaS architecture...
 
@@ -174,7 +174,7 @@ Run 'integrateapi fix' to auto-fix issues.`}</pre>
       {/* CTA */}
       <section className="stress-cta">
         <h2>Ready to stress test your stack?</h2>
-        <CommandBlock command="integrateapi stress-test" />
+        <CommandBlock command="npx integrateapi add stripe" />
         <div className="stress-cta-links">
           <Link href="/templates" className="stress-link">
             Browse Templates →

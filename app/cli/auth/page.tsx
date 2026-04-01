@@ -1,7 +1,7 @@
+import { randomUUID } from 'crypto';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import client from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { initDb } from '@/lib/db';
 
 interface CliAuthToken {
   id: string;
@@ -23,17 +23,39 @@ export default async function CliAuthPage({ searchParams }: PageProps) {
   const token = params.token;
 
   if (!token) {
-    return <div className="flex min-h-screen flex-col items-center justify-center p-24 dark:bg-gray-900 dark:text-gray-100">Invalid login link.</div>;
+    return (
+      <div className="container" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="accountCard" style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-mid)' }}>This login link is invalid or expired.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!userId) {
-    redirect(`/sign-in?redirect_url=/cli/auth?token=${token}`);
+    const redirectUrl = `/cli/auth?token=${encodeURIComponent(token)}`;
+    redirect(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
   }
 
   let message = '';
-  let authToken = null;
+  let status: 'success' | 'error' | 'info' = 'info';
 
   try {
+    const client = await initDb();
+    if (!client) {
+      message = 'Database not configured.';
+      status = 'error';
+      return (
+        <div className="container" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="accountCard" style={{ textAlign: 'center', maxWidth: '440px' }}>
+            <p className="section-label center" style={{ marginBottom: '12px' }}>CLI Authentication</p>
+            <h1 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>CLI Authentication</h1>
+            <p style={{ color: '#fca5a5' }}>{message}</p>
+          </div>
+        </div>
+      );
+    }
+
     const result = await client.query<CliAuthToken>(
       'SELECT * FROM cli_auth_tokens WHERE token = $1',
       [token]
@@ -41,33 +63,53 @@ export default async function CliAuthPage({ searchParams }: PageProps) {
     const cliAuthToken = result.rows[0];
 
     if (!cliAuthToken || new Date(cliAuthToken.expires_at) < new Date()) {
+      if (cliAuthToken && cliAuthToken.status !== 'expired') {
+        await client.query('UPDATE cli_auth_tokens SET status = $1 WHERE id = $2', [
+          'expired',
+          cliAuthToken.id,
+        ]);
+      }
       message = 'This login link is invalid or expired.';
+      status = 'error';
     } else if (cliAuthToken.status === 'verified') {
       message = 'Already authenticated.';
-      authToken = cliAuthToken.auth_token;
+      status = 'info';
     } else if (cliAuthToken.status === 'pending') {
-      const newAuthToken = uuidv4();
+      const newAuthToken = `sk_live_${randomUUID()}`;
       await client.query(
         'UPDATE cli_auth_tokens SET status = $1, user_id = $2, auth_token = $3 WHERE id = $4',
         ['verified', userId, newAuthToken, cliAuthToken.id]
       );
       message = "You're authenticated! You can close this window.";
-      authToken = newAuthToken;
+      status = 'success';
+    } else {
+      message = 'This login link is invalid or expired.';
+      status = 'error';
     }
   } catch (error) {
     console.error('Error in /cli/auth page:', error);
     message = 'An error occurred during authentication.';
+    status = 'error';
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24 dark:bg-gray-900 dark:text-gray-100">
-      <h1 className="text-4xl font-bold mb-8">CLI Authentication</h1>
-      <p className="text-lg text-center">{message}</p>
-      {authToken && (
-        <p className="text-sm mt-4">
-          Your auth token: <code className="bg-gray-800 p-1 rounded">{authToken}</code>
+    <div className="container" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="accountCard" style={{ textAlign: 'center', maxWidth: '440px' }}>
+        <p className="section-label center" style={{ marginBottom: '12px' }}>CLI Authentication</p>
+        <h1 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>CLI Authentication</h1>
+        <p
+          style={{
+            color:
+              status === 'success'
+                ? 'var(--green)'
+                : status === 'error'
+                  ? '#fca5a5'
+                  : 'var(--text-mid)',
+          }}
+        >
+          {message}
         </p>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import client from '@/lib/db';
+import { initDb } from '@/lib/db';
 import { clerkClient } from '@clerk/nextjs/server';
 
 interface CliAuthToken {
@@ -14,6 +14,11 @@ export async function GET(req: NextRequest) {
     }
 
     const cliAuthToken = authHeader.split(' ')[1];
+
+    const client = await initDb();
+    if (!client) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
 
     const result = await client.query<CliAuthToken>(
       'SELECT user_id FROM cli_auth_tokens WHERE auth_token = $1 AND status = $2',
@@ -33,7 +38,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const planTier = user.publicMetadata?.planTier || 'free';
+    const hasLifetimePro = user.publicMetadata?.hasLifetimePro === true;
+    const subscriptionStatus = user.publicMetadata?.subscriptionStatus as
+      | 'active'
+      | 'trialing'
+      | 'past_due'
+      | 'canceled'
+      | 'unpaid'
+      | 'paused'
+      | undefined;
+    const subscriptionIsPro =
+      subscriptionStatus === 'active' ||
+      subscriptionStatus === 'trialing' ||
+      subscriptionStatus === 'past_due';
+    const isPro =
+      hasLifetimePro || subscriptionIsPro || user.publicMetadata?.isPro === true;
+    const planTier = isPro ? 'pro' : 'free';
 
     return NextResponse.json({
       email: user.emailAddresses[0]?.emailAddress,

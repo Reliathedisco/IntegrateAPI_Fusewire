@@ -2,9 +2,15 @@ import CodeBlock from "@/components/CodeBlock";
 
 const docs = [
   {
+    command: "init",
+    description: "Quick start for new projects.",
+    example: "npx integrateapi init",
+  },
+  {
     command: "login",
-    description: "Authenticate with IntegrateAPI to link your account.",
-    example: "npx integrateapi login",
+    description:
+      "Authenticate with IntegrateAPI to link your account. You can pass a CLI token manually if needed.",
+    example: "npx integrateapi login --token YOUR_TOKEN",
   },
   {
     command: "list",
@@ -53,6 +59,21 @@ export default function DocsPage() {
         Reference for the IntegrateAPI CLI. Run commands from your Next.js
         project root.
       </p>
+      <section className="docSection">
+        <h2>Get started (recommended)</h2>
+        <CodeBlock code="npx integrateapi init" />
+        <p>
+          Installs your first integration and shows the next steps.
+        </p>
+      </section>
+      <section className="docSection">
+        <h2>Authenticate with token (recommended)</h2>
+        <CodeBlock code="npx integrateapi login --token YOUR_TOKEN" />
+        <p>
+          Get your token from integrateapi.io/account → CLI Authentication
+          section.
+        </p>
+      </section>
       <div className="docsList">
         {docs.map((d) => (
           <section key={d.command} className="docSection">

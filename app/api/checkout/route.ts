@@ -1,6 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe, stripe } from "@/lib/stripe";
 import { logger } from "@/lib/logger";
 import Stripe from "stripe";
 
@@ -52,9 +52,8 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_APP_URL ||
       new URL(req.url).origin;
 
-    const successUrl = new URL("/account", appUrl);
-    successUrl.searchParams.set("upgraded", "true");
-    successUrl.searchParams.set("plan", plan);
+    const successUrl = new URL("/account", "https://integrateapi.io");
+    successUrl.searchParams.set("success", "true");
 
     const cancelUrl = new URL("/", appUrl);
     cancelUrl.hash = "pricing";
@@ -69,8 +68,38 @@ export async function POST(req: Request) {
 
     const customerId = user.publicMetadata?.stripeCustomerId as string | undefined;
 
+    const price = await getStripe().prices.retrieve(priceId);
+    const priceType = price.type || (price.recurring ? "recurring" : "one_time");
+
+    if (plan === "subscription" && priceType !== "recurring") {
+      logger.error("Checkout: Subscription plan requires recurring price", {
+        plan,
+        priceId,
+        priceType,
+      });
+      return NextResponse.json(
+        { error: "Subscription plan requires a recurring price" },
+        { status: 400 }
+      );
+    }
+
+    if (plan === "lifetime" && priceType !== "one_time") {
+      logger.error("Checkout: Lifetime plan requires one-time price", {
+        plan,
+        priceId,
+        priceType,
+      });
+      return NextResponse.json(
+        { error: "Lifetime plan requires a one-time price" },
+        { status: 400 }
+      );
+    }
+
+    const sessionMode: Stripe.Checkout.SessionCreateParams.Mode =
+      plan === "subscription" ? "subscription" : "payment";
+
     const session = await stripe.checkout.sessions.create({
-      mode: plan === "subscription" ? "subscription" : "payment",
+      mode: sessionMode,
       payment_method_types: ["card"],
       line_items: [
         {

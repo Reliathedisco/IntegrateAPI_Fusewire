@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS user_usage (
+  user_id TEXT PRIMARY KEY,
+  installs_count INTEGER DEFAULT 0,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

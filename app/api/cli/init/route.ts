@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import client from '@/lib/db';
+import { initDb } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,11 +9,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Token is required' }, { status: 400 });
     }
 
+    const client = await initDb();
+    if (!client) {
+      return NextResponse.json(
+        { success: false, error: 'Database not configured' },
+        { status: 500 }
+      );
+    }
+
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
     await client.query(
-      'INSERT INTO cli_auth_tokens (token, expires_at) VALUES ($1, $2)',
-      [token, expiresAt.toISOString()]
+      'INSERT INTO cli_auth_tokens (token, status, expires_at) VALUES ($1, $2, $3)',
+      [token, 'pending', expiresAt.toISOString()]
     );
 
     return NextResponse.json({ success: true });

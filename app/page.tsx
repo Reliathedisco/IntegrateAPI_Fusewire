@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 const terminalLines = [
@@ -148,11 +149,21 @@ const fileTreeItems = [
 ];
 
 export default function LandingPage() {
+  const router = useRouter();
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterStatus, setNewsletterStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [newsletterMessage, setNewsletterMessage] = useState<string | null>(null);
+  const [redirectingTo, setRedirectingTo] = useState<"free" | "pro" | null>(null);
+
+  const handleRedirect = (target: "free" | "pro", url: string) => {
+    if (redirectingTo) return;
+    setRedirectingTo(target);
+    setTimeout(() => {
+      router.push(url);
+    }, 250);
+  };
 
   const submitNewsletter = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -194,7 +205,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="landing">
+    <div className={`landing ${redirectingTo ? "is-redirecting" : ""}`}>
       <div className="grid-bg"></div>
 
       {/* Hero */}
@@ -252,7 +263,7 @@ export default function LandingPage() {
             <div className="card-num">02 / Stress Test</div>
             <div className="card-title">Analyze your SaaS architecture</div>
             <div className="card-desc">Detect scaling risks before they become incidents.</div>
-            <code className="card-cmd">$ integrateapi stress-test</code>
+            <code className="card-cmd">$ npx integrateapi add stripe</code>
             <ul className="card-features">
               <li>Detect scaling risks</li>
               <li>Evaluate auth & billing</li>
@@ -454,13 +465,15 @@ export default function LandingPage() {
                 <li>Stress Test tool</li>
                 <li>CLI access</li>
               </ul>
-              <Link
-                href="/sign-up"
+              <button
+                type="button"
                 className="btn-ghost"
                 style={{ marginTop: "28px", display: "inline-block" }}
+                disabled={!!redirectingTo}
+                onClick={() => handleRedirect("free", "/sign-in")}
               >
-                Get started free
-              </Link>
+                {redirectingTo === "free" ? "Redirecting..." : "Get started free"}
+              </button>
             </div>
 
             {/* Pro tier */}
@@ -490,13 +503,17 @@ export default function LandingPage() {
                 <li>Stress Test tool</li>
                 <li>Future templates included</li>
               </ul>
-              <Link
-                href="/sign-up"
+              <button
+                type="button"
                 className="btn-primary"
                 style={{ marginTop: "28px", display: "inline-block" }}
+                disabled={!!redirectingTo}
+                onClick={() =>
+                  handleRedirect("pro", "/sign-in?redirect=/checkout?plan=subscription")
+                }
               >
-                Get Pro →
-              </Link>
+                {redirectingTo === "pro" ? "Redirecting..." : "Get Pro →"}
+              </button>
             </div>
           </div>
         </div>
@@ -520,6 +537,7 @@ export default function LandingPage() {
           <Link href="/stress-test">Stress Test</Link>
           <Link href="/registry">Registry</Link>
           <Link href="/docs">Docs</Link>
+          <Link href="/blog">Blog</Link>
           <a href="https://github.com/Reliathedisco/IntegrateAPI_Fusewire" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
         <span className="footer-copy">© 2026 Reli Music LLC</span>

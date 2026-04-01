@@ -21,6 +21,7 @@ export default function RootLayout({
   const content = (
     <html lang="en">
       <head>
+        <meta name="saashub-verification" content="pr342pdn3wrw" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -41,5 +42,19 @@ export default function RootLayout({
     return content;
   }
 
-  return <ClerkProvider>{content}</ClerkProvider>;
+  return (
+    <ClerkProvider
+      appearance={{
+        baseTheme: undefined,
+        variables: {
+          colorPrimary: "#000000",
+          colorBackground: "#ffffff",
+          colorText: "#000000",
+          borderRadius: "12px",
+        },
+      }}
+    >
+      {content}
+    </ClerkProvider>
+  );
 }

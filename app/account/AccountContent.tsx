@@ -1,8 +1,9 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useCallback, useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { regenerateCliAuthToken } from './actions';
 
 const MAX_FREE_INTEGRATIONS = 5;
 type CheckoutPlan = "lifetime" | "subscription";
@@ -33,15 +34,27 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
     searchParams.get("upgraded") === "true" || searchParams.get("success") === "true";
 
   const [cliAuthToken, setCliAuthToken] = useState<string | null>(initialCliAuthToken);
-  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [tokenError, setTokenError] = useState<string | null>(null);
+  const [cliMessage, setCliMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [planStatus, setPlanStatus] = useState<{ isPro: boolean; plan: "free" | "pro" } | null>(null);
+  const [usageStatus, setUsageStatus] = useState<{
+    installs: number;
+    remaining: number;
+    allowed: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (justPurchased) {
+      const plan = searchParams.get("plan");
       setMessage({
         type: "success",
-        text: "You're now on Pro — welcome!",
+        text:
+          plan === "subscription"
+            ? "Subscription active! Your account has been upgraded to Pro."
+            : "Upgrade complete! Your account has been upgraded to Pro.",
       });
 
       if (user) {
@@ -84,6 +97,47 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
     }
   }, [justPurchased, searchParams, user]);
 
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    let canceled = false;
+
+    const loadStatus = async () => {
+      try {
+        const response = await fetch("/api/user/status");
+        const data = await response.json();
+        if (!canceled && typeof data?.isPro === "boolean") {
+          setPlanStatus({ isPro: data.isPro, plan: data.plan === "pro" ? "pro" : "free" });
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    const loadUsage = async () => {
+      try {
+        const response = await fetch("/api/check-limit");
+        const data = await response.json();
+        if (!canceled && typeof data?.installs === "number") {
+          setUsageStatus({
+            installs: data.installs,
+            remaining: typeof data.remaining === "number" ? data.remaining : 0,
+            allowed: Boolean(data.allowed),
+          });
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    loadStatus();
+    loadUsage();
+
+    return () => {
+      canceled = true;
+    };
+  }, [isLoaded]);
+
   if (!isLoaded) {
     return (
       <div className="accountCard">
@@ -103,13 +157,15 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
     subscriptionStatus === "past_due";
 
   const isPro = hasLifetimePro || subscriptionIsPro || user?.publicMetadata?.isPro === true;
-  const usedIntegrations =
-    (user?.publicMetadata?.usedIntegrations as number) || 0;
+  const effectiveIsPro = planStatus?.isPro ?? isPro;
+  const usedIntegrations = usageStatus?.installs ?? 0;
+  const remainingIntegrations =
+    usageStatus?.remaining ?? Math.max(0, MAX_FREE_INTEGRATIONS - usedIntegrations);
   const planLabel = hasLifetimePro
     ? "Pro (Lifetime)"
     : subscriptionIsPro
       ? "Pro (Subscription)"
-      : isPro
+    : effectiveIsPro
         ? "Pro"
         : "Free";
   const stripeCustomerId = user?.publicMetadata?.stripeCustomerId as string | undefined;
@@ -158,33 +214,36 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
     }
   };
 
-  const handleGenerateToken = useCallback(async () => {
-    if (!userId || isGeneratingToken) return;
-    setIsGeneratingToken(true);
-    setTokenError(null);
+  const handleRegenerateToken = async () => {
+    if (!userId) return;
+    setIsRegenerating(true);
     try {
-      const response = await fetch("/api/cli/regenerate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to generate API key");
-      }
-      setCliAuthToken(data.authToken as string);
-    } catch (error) {
-      setTokenError(error instanceof Error ? error.message : "Failed to generate API key");
+      const newToken = await regenerateCliAuthToken(userId);
+      setCliAuthToken(newToken);
+      setCliMessage({ type: "success", text: "New CLI token generated." });
+    } catch {
+      setCliMessage({ type: "error", text: "Failed to regenerate token." });
     } finally {
-      setIsGeneratingToken(false);
+      setIsRegenerating(false);
     }
-  }, [isGeneratingToken, userId]);
+  };
 
   const handleCopyToken = async () => {
-    if (!cliAuthToken) return;
-    await navigator.clipboard.writeText(cliAuthToken);
-    setToastMessage("Copied!");
-    setTimeout(() => setToastMessage(null), 1500);
+    if (!cliAuthToken) {
+      setCliMessage({ type: "error", text: "No token to copy." });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(cliAuthToken);
+      setCliMessage({ type: "success", text: "Token copied to clipboard." });
+    } catch {
+      setCliMessage({ type: "error", text: "Failed to copy token." });
+    }
   };
+
+  const maskedCliAuthToken = cliAuthToken
+    ? `${cliAuthToken.slice(0, 12)}...${cliAuthToken.slice(-4)}`
+    : null;
 
   return (
     <>
@@ -213,13 +272,13 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
           <strong>Plan</strong>
         </p>
         <p>
-          <span className={`planBadge ${isPro ? "pro" : "free"}`}>{planLabel}</span>
+          <span className={`planBadge ${effectiveIsPro ? "pro" : "free"}`}>{planLabel}</span>
         </p>
 
         <p>
           <strong>Integrations</strong>
         </p>
-        {isPro ? (
+        {effectiveIsPro ? (
           <p>Unlimited integrations</p>
         ) : (
           <>
@@ -235,11 +294,17 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
               <p className="usageText">
                 {usedIntegrations} / {MAX_FREE_INTEGRATIONS} integrations used
               </p>
+              <p className="usageText">Remaining: {remainingIntegrations}</p>
             </div>
+            {remainingIntegrations <= 1 && (
+              <p style={{ color: "#fca5a5", marginTop: "8px", fontSize: "0.85rem" }}>
+                You’re about to hit your free limit.
+              </p>
+            )}
           </>
         )}
 
-        {!isPro && !justPurchased ? (
+        {!effectiveIsPro && !justPurchased ? (
           <div className="upgradeButton" style={{ display: "grid", gap: "10px" }}>
             <button
               type="button"
@@ -270,68 +335,94 @@ export default function AccountContent({ initialCliAuthToken, userId }: AccountC
             </button>
           )
         )}
+        {!effectiveIsPro && (
+          <p style={{ color: "var(--text-mid)", marginTop: "12px" }}>
+            Upgrade to unlock all integrations.
+          </p>
+        )}
       </div>
 
-      {/* CLI Authentication Section */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">CLI Authentication</h2>
-        <div className="bg-gray-800 p-4 rounded-lg">
-          {cliAuthToken ? (
-            <>
-              <p className="mb-2">
-                Current auth token:
-                <code className="bg-gray-700 p-1 rounded ml-2">
-                  sk_live_****...{cliAuthToken.slice(-4)}
-                </code>
-              </p>
+      <div className="accountCard" style={{ marginTop: "24px" }}>
+        <p>
+          <strong>CLI Authentication</strong>
+        </p>
+        <p>Use this token to authenticate the CLI without the browser flow.</p>
+        {cliMessage && (
+          <div
+            style={{
+              padding: "10px 12px",
+              marginBottom: "12px",
+              borderRadius: "8px",
+              background: cliMessage.type === "success" ? "var(--green-dim)" : "#7f1d1d",
+              color: cliMessage.type === "success" ? "var(--green)" : "#fca5a5",
+            }}
+          >
+            {cliMessage.text}
+          </div>
+        )}
+        {cliAuthToken ? (
+          <>
+            <p>
+              Current auth token:
+              <code className="inline-code" style={{ marginLeft: "8px" }}>
+                {maskedCliAuthToken}
+              </code>
+            </p>
+            <div className="cardCommand" style={{ marginTop: "12px" }}>
+              <code>
+                npx integrateapi login --token {maskedCliAuthToken}
+              </code>
+            </div>
+            <div className="authButtons" style={{ marginTop: "12px" }}>
               <button
                 type="button"
-                onClick={handleGenerateToken}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
-                disabled={isGeneratingToken}
+                onClick={handleRegenerateToken}
+                className="primary"
+                disabled={isRegenerating}
               >
-                {isGeneratingToken ? "Generating..." : "Regenerate API Key"}
+                {isRegenerating ? "Regenerating..." : "Regenerate token"}
               </button>
-              <button
-                type="button"
-                onClick={handleCopyToken}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-              >
+              <button type="button" onClick={handleCopyToken} className="signOutButton">
                 Copy
               </button>
-            </>
-          ) : (
-            <div>
-              <p className="mb-3">No CLI auth token found. Generate one to get started.</p>
               <button
                 type="button"
-                onClick={handleGenerateToken}
-                className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-                disabled={isGeneratingToken}
+                onClick={async () => {
+                  if (!cliAuthToken) return;
+                  try {
+                    await navigator.clipboard.writeText(
+                      `npx integrateapi login --token ${cliAuthToken}`
+                    );
+                    setCliMessage({ type: "success", text: "Login command copied." });
+                  } catch {
+                    setCliMessage({ type: "error", text: "Failed to copy login command." });
+                  }
+                }}
+                className="signOutButton"
               >
-                {isGeneratingToken ? "Generating..." : "Generate API Key"}
+                Copy login command
               </button>
             </div>
-          )}
-          {toastMessage ? (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "8px 12px",
-                borderRadius: "6px",
-                background: "#064e3b",
-                color: "#6ee7b7",
-                display: "inline-block",
-              }}
-            >
-              {toastMessage}
+          </>
+        ) : (
+          <>
+            <p className="emptyState">No CLI auth token found yet.</p>
+            <div className="cardCommand" style={{ marginTop: "12px" }}>
+              <code>npx integrateapi login --token YOUR_TOKEN</code>
             </div>
-          ) : null}
-          {tokenError ? (
-            <p style={{ color: "#fca5a5", marginTop: "12px" }}>{tokenError}</p>
-          ) : null}
-        </div>
-      </section>
+            <div className="authButtons">
+              <button
+                type="button"
+                onClick={handleRegenerateToken}
+                className="primary"
+                disabled={isRegenerating}
+              >
+                {isRegenerating ? "Generating..." : "Generate token"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </>
   );
 }
