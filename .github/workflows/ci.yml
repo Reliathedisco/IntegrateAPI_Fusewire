@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Typecheck & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # Stub env vars so the build doesn't fail on missing secrets.
+          # These are build-time stubs only — real values must be set in Vercel.
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_stub
+          CLERK_SECRET_KEY: sk_test_stub
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+          NEXT_PUBLIC_URL: https://example.com
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_stub
+          STRIPE_SECRET_KEY: sk_test_stub
+          STRIPE_WEBHOOK_SECRET: whsec_stub
+          STRIPE_PRICE_ID: price_stub
+          RESEND_API_KEY: re_stub
+          DATABASE_URL: postgresql://stub:stub@localhost/stub
