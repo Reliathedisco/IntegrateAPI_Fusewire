@@ -37,6 +37,12 @@ export default function Navigation() {
         >
           Registry
         </Link>
+        <Link
+          href="/get-started"
+          className={isActive("/get-started") ? "active" : ""}
+        >
+          Get Started
+        </Link>
         <Link href="/docs" className={isActive("/docs") ? "active" : ""}>
           Docs
         </Link>

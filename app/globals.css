@@ -2442,6 +2442,124 @@ section h2 {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
+   GET STARTED PAGE STYLES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.get-started-page {
+  min-height: 100vh;
+}
+
+.get-started-hero {
+  position: relative;
+  padding: 80px 40px;
+  text-align: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.get-started-hero-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-image:
+    repeating-linear-gradient(0deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 60px),
+    repeating-linear-gradient(90deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 60px);
+}
+
+.get-started-hero-content {
+  position: relative;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.get-started-hero h1 {
+  font-family: var(--mono);
+  font-size: clamp(40px, 6vw, 60px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+}
+
+.get-started-sub {
+  font-size: 16px;
+  color: var(--text-mid);
+  line-height: 1.7;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.get-started-steps {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.get-started-step {
+  display: flex;
+  gap: 24px;
+  padding: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+
+.get-started-step:hover {
+  border-color: var(--accent);
+}
+
+.get-started-step-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.get-started-step-body h2 {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.get-started-step-body p {
+  font-size: 14px;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.get-started-next {
+  text-align: center;
+  padding: 80px 40px;
+  border-top: 1px solid var(--border);
+}
+
+.get-started-next h2 {
+  font-family: var(--serif);
+  font-size: 32px;
+  margin-bottom: 32px;
+}
+
+.get-started-links {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
    RESPONSIVE STYLES
    ══════════════════════════════════════════════════════════════════════════════ */
 
@@ -2496,6 +2614,11 @@ section h2 {
   .stress-features-grid,
   .stress-checklist-grid {
     grid-template-columns: 1fr;
+  }
+
+  .get-started-step {
+    flex-direction: column;
+    gap: 16px;
   }
 }
 

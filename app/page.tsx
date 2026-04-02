@@ -519,6 +519,7 @@ export default function LandingPage() {
           <Link href="/templates">Templates</Link>
           <Link href="/stress-test">Stress Test</Link>
           <Link href="/registry">Registry</Link>
+          <Link href="/get-started">Get Started</Link>
           <Link href="/docs">Docs</Link>
           <a href="https://github.com/Reliathedisco/IntegrateAPI_Fusewire" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
