@@ -260,17 +260,17 @@ export async function POST(req: NextRequest) {
 
   console.log("Stripe webhook: event received", { type: event.type, id: event.id });
 
-  void processStripeEvent(event).catch((error) => {
-    console.log("Stripe webhook: processing error", {
-      message: error instanceof Error ? error.message : String(error),
-    });
+  try {
+    await processStripeEvent(event);
+  } catch (error) {
     logger.error("Stripe webhook: handler error", {
       name: error instanceof Error ? error.name : "Unknown",
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       type: event.type,
     });
-  });
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+  }
 
   return NextResponse.json({ received: true });
 }

@@ -252,7 +252,7 @@ export default function LandingPage() {
             <div className="card-num">02 / Stress Test</div>
             <div className="card-title">Analyze your SaaS architecture</div>
             <div className="card-desc">Detect scaling risks before they become incidents.</div>
-            <code className="card-cmd">$ integrateapi stress-test</code>
+            <code className="card-cmd">$ npx integrateapi stress-test</code>
             <ul className="card-features">
               <li>Detect scaling risks</li>
               <li>Evaluate auth & billing</li>

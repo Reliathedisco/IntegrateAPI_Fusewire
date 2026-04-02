@@ -1,6 +1,10 @@
-import client from '../lib/db';
+import pool from '../lib/db';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function runMigrations() {
   try {
@@ -11,15 +15,15 @@ async function runMigrations() {
     for (const file of migrationFiles) {
       const filePath = path.join(migrationsDir, file);
       const sql = await fs.readFile(filePath, 'utf8');
-      await client.query(sql);
-      console.log();
+      await pool.query(sql);
+      console.log(`Applied migration: ${file}`);
     }
     console.log('All migrations completed.');
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);
   } finally {
-    await client.end();
+    await pool.end();
   }
 }
 

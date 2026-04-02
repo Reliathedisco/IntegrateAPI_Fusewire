@@ -1,21 +1,17 @@
 import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
 
-// API checks send an HTTP request to a URL endpoint and validate the response. Read more at:
-// https://www.checklyhq.com/docs/api-checks/
-
-new ApiCheck('books-api-check-1', {
-  name: 'Books API',
+new ApiCheck('integrateapi-api-check', {
+  name: 'IntegrateAPI Integrations API',
   alertChannels: [],
-  degradedResponseTime: 10000, // milliseconds
+  degradedResponseTime: 10000,
   maxResponseTime: 20000,
   request: {
-    url: 'https://danube-web.shop/api/books',
+    url: 'https://integrateapi.io/api/integrations',
     method: 'GET',
     followRedirects: true,
     skipSSL: false,
     assertions: [
       AssertionBuilder.statusCode().equals(200),
-      AssertionBuilder.jsonBody('$[0].id').isNotNull(),
     ],
   },
   runParallel: true,

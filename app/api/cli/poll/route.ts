@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import client from '@/lib/db';
+import pool from '@/lib/db';
 
 interface CliAuthToken {
   status: 'pending' | 'verified' | 'expired';
@@ -8,13 +8,16 @@ interface CliAuthToken {
 }
 
 export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const token = searchParams.get('token');
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get('token');
 
-    if (!token) {
-      return NextResponse.json({ status: 'expired' }, { status: 400 });
-    }
+  if (!token) {
+    return NextResponse.json({ status: 'expired' }, { status: 400 });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
 
     const result = await client.query<CliAuthToken>(
       'SELECT status, auth_token, expires_at FROM cli_auth_tokens WHERE token = $1',
@@ -34,5 +37,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Error in /api/cli/poll:', error);
     return NextResponse.json({ status: 'expired' }, { status: 500 });
+  } finally {
+    if (client) client.release();
   }
 }

@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.NEWSLETTER_FROM || process.env.RESEND_FROM;
   const replyTo = process.env.NEWSLETTER_REPLY_TO || process.env.RESEND_REPLY_TO;
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
   const segmentId =
     process.env.RESEND_FUSEWIRE_SEGMENT_ID || process.env.RESEND_NEWSLETTER_SEGMENT_ID;
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       email,
       unsubscribed: false,
-      ...(segmentId ? { segments: [{ id: segmentId }] } : {}),
+      ...(audienceId ? { audience_id: audienceId } : {}),
     }),
     idempotencyKey: idempotencyKey("fusewire-contact", email),
   });
@@ -154,6 +155,5 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ ok: true, status: "subscribed" });
 }
 

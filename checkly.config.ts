@@ -11,7 +11,7 @@ const config = defineConfig({
   */
   logicalId: 'integrateapi_fusewire',
   /* An optional URL to your Git repo */
-  repoUrl: 'https://github.com/checkly/checkly-cli',
+  repoUrl: 'https://github.com/reliathedisco/integrateapi_fusewire',
   /* Sets default values for Checks */
   checks: {
     /* A default for how often your Check should run in minutes */
@@ -30,7 +30,7 @@ const config = defineConfig({
     playwrightConfig: {
       timeout: 30000,
       use: {
-        baseURL: 'https://www.danube-web.shop',
+        baseURL: 'https://integrateapi.io',
         viewport: { width: 1280, height: 720 },
       }
     },

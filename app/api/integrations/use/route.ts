@@ -12,7 +12,10 @@ export async function POST() {
 
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
-  const isPro = user.publicMetadata?.isPro === true;
+  const isPro =
+    user.publicMetadata?.hasLifetimePro === true ||
+    user.publicMetadata?.isPro === true ||
+    ["active", "trialing"].includes((user.publicMetadata?.subscriptionStatus as string) ?? "");
 
   if (isPro) {
     return NextResponse.json({ ok: true });

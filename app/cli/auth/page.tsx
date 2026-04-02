@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import client from '@/lib/db';
+import pool from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CliAuthToken {
@@ -23,17 +23,24 @@ export default async function CliAuthPage({ searchParams }: PageProps) {
   const token = params.token;
 
   if (!token) {
-    return <div className="flex min-h-screen flex-col items-center justify-center p-24 dark:bg-gray-900 dark:text-gray-100">Invalid login link.</div>;
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        Invalid login link.
+      </div>
+    );
   }
 
   if (!userId) {
-    redirect(`/sign-in?redirect_url=/cli/auth?token=${token}`);
+    redirect(`/sign-in?redirect_url=${encodeURIComponent(`/cli/auth?token=${token}`)}`);
   }
 
   let message = '';
   let authToken = null;
 
+  let client;
   try {
+    client = await pool.connect();
+
     const result = await client.query<CliAuthToken>(
       'SELECT * FROM cli_auth_tokens WHERE token = $1',
       [token]
@@ -57,15 +64,19 @@ export default async function CliAuthPage({ searchParams }: PageProps) {
   } catch (error) {
     console.error('Error in /cli/auth page:', error);
     message = 'An error occurred during authentication.';
+  } finally {
+    if (client) client.release();
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24 dark:bg-gray-900 dark:text-gray-100">
-      <h1 className="text-4xl font-bold mb-8">CLI Authentication</h1>
-      <p className="text-lg text-center">{message}</p>
+    <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>CLI Authentication</h1>
+      <p style={{ fontSize: '1.1rem', textAlign: 'center' }}>{message}</p>
       {authToken && (
-        <p className="text-sm mt-4">
-          Your auth token: <code className="bg-gray-800 p-1 rounded">{authToken}</code>
+        <p style={{ fontSize: '0.875rem', marginTop: '1rem' }}>
+          Your auth token: <code style={{ background: 'var(--card)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+            {'•'.repeat(authToken.length - 4)}{authToken.slice(-4)}
+          </code>
         </p>
       )}
     </div>

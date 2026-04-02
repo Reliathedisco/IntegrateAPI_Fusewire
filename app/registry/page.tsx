@@ -31,7 +31,7 @@ const integrations: Integration[] = [
     description: "Complete payments platform for internet businesses. Accept payments, manage subscriptions, and handle complex payment flows.",
     category: "payments",
     envVars: ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET"],
-    installCommand: "npm install stripe",
+    installCommand: "npx integrateapi add stripe",
     docs: "https://stripe.com/docs",
   },
   {
@@ -40,7 +40,7 @@ const integrations: Integration[] = [
     description: "All-in-one platform for running your SaaS business. Payments, subscriptions, and global tax compliance built-in.",
     category: "payments",
     envVars: ["LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET"],
-    installCommand: "npm install @lemonsqueezy/lemonsqueezy.js",
+    installCommand: "npx integrateapi add lemon-squeezy",
     docs: "https://docs.lemonsqueezy.com",
   },
   {
@@ -49,7 +49,7 @@ const integrations: Integration[] = [
     description: "Complete user management and authentication. Drop-in auth with social logins, MFA, and user profiles.",
     category: "auth",
     envVars: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
-    installCommand: "npm install @clerk/nextjs",
+    installCommand: "npx integrateapi add clerk",
     docs: "https://clerk.com/docs",
   },
   {
@@ -58,7 +58,7 @@ const integrations: Integration[] = [
     description: "Flexible authentication and authorization platform. Secure access for applications and APIs.",
     category: "auth",
     envVars: ["AUTH0_SECRET", "AUTH0_BASE_URL", "AUTH0_ISSUER_BASE_URL", "AUTH0_CLIENT_ID", "AUTH0_CLIENT_SECRET"],
-    installCommand: "npm install @auth0/nextjs-auth0",
+    installCommand: "npx integrateapi add auth0",
     docs: "https://auth0.com/docs",
   },
   {
@@ -67,7 +67,7 @@ const integrations: Integration[] = [
     description: "Open source Firebase alternative. Postgres database, authentication, instant APIs, and realtime subscriptions.",
     category: "database",
     envVars: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
-    installCommand: "npm install @supabase/supabase-js",
+    installCommand: "npx integrateapi add supabase",
     docs: "https://supabase.com/docs",
   },
   {
@@ -76,7 +76,7 @@ const integrations: Integration[] = [
     description: "Serverless Postgres built for the cloud. Instant branching, autoscaling, and bottomless storage.",
     category: "database",
     envVars: ["DATABASE_URL", "NEON_API_KEY"],
-    installCommand: "npm install @neondatabase/serverless",
+    installCommand: "npx integrateapi add neon",
     docs: "https://neon.tech/docs",
   },
   {
@@ -85,7 +85,7 @@ const integrations: Integration[] = [
     description: "Email API for developers. Build, test, and send transactional emails at scale.",
     category: "email",
     envVars: ["RESEND_API_KEY"],
-    installCommand: "npm install resend",
+    installCommand: "npx integrateapi add resend",
     docs: "https://resend.com/docs",
   },
   {
@@ -94,7 +94,7 @@ const integrations: Integration[] = [
     description: "AI models for natural language, code, and images. GPT-4, DALL-E, Whisper, and embeddings.",
     category: "ai",
     envVars: ["OPENAI_API_KEY", "OPENAI_ORG_ID"],
-    installCommand: "npm install openai",
+    installCommand: "npx integrateapi add openai",
     docs: "https://platform.openai.com/docs",
   },
   {
@@ -103,7 +103,7 @@ const integrations: Integration[] = [
     description: "Claude AI models for safe, accurate, and helpful assistance. Advanced reasoning and analysis.",
     category: "ai",
     envVars: ["ANTHROPIC_API_KEY"],
-    installCommand: "npm install @anthropic-ai/sdk",
+    installCommand: "npx integrateapi add anthropic",
     docs: "https://docs.anthropic.com",
   },
   {
@@ -112,7 +112,7 @@ const integrations: Integration[] = [
     description: "Application monitoring and error tracking. Real-time crash reporting with context and stack traces.",
     category: "monitoring",
     envVars: ["SENTRY_DSN", "SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"],
-    installCommand: "npm install @sentry/nextjs",
+    installCommand: "npx integrateapi add sentry",
     docs: "https://docs.sentry.io",
   },
   {
@@ -121,7 +121,7 @@ const integrations: Integration[] = [
     description: "Product analytics, feature flags, and session recording. All-in-one platform for understanding users.",
     category: "analytics",
     envVars: ["NEXT_PUBLIC_POSTHOG_KEY", "NEXT_PUBLIC_POSTHOG_HOST"],
-    installCommand: "npm install posthog-js",
+    installCommand: "npx integrateapi add posthog",
     docs: "https://posthog.com/docs",
   },
   {
@@ -130,7 +130,7 @@ const integrations: Integration[] = [
     description: "File uploads for modern web apps. Simple API for handling uploads with built-in CDN and optimization.",
     category: "storage",
     envVars: ["UPLOADTHING_SECRET", "UPLOADTHING_APP_ID"],
-    installCommand: "npm install uploadthing",
+    installCommand: "npx integrateapi add uploadthing",
     docs: "https://docs.uploadthing.com",
   },
   {
@@ -139,7 +139,7 @@ const integrations: Integration[] = [
     description: "Platform for frontend frameworks and static sites. Deploy instantly with automatic HTTPS, global CDN, and edge functions.",
     category: "deployment",
     envVars: ["VERCEL_TOKEN", "VERCEL_PROJECT_ID", "VERCEL_ORG_ID"],
-    installCommand: "npm install -g vercel",
+    installCommand: "npx integrateapi add vercel",
     docs: "https://vercel.com/docs",
   },
   {
@@ -148,7 +148,7 @@ const integrations: Integration[] = [
     description: "Deploy infrastructure without the complexity. Provision databases, deploy backends, and scale with zero DevOps.",
     category: "deployment",
     envVars: ["RAILWAY_TOKEN", "RAILWAY_PROJECT_ID"],
-    installCommand: "npm install -g @railway/cli",
+    installCommand: "npx integrateapi add railway",
     docs: "https://docs.railway.app",
   },
 ];
