@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.0",
-    "integrateapi": "^1.0.2",
+    "integrateapi": "^1.1.0",
     "next": "^15.1.0",
     "pg": "^8.20.0",
     "react": "^19.0.0",
