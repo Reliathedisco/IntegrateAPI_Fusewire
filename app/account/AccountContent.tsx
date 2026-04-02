@@ -105,7 +105,18 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
     if (!cliAuthToken) return;
     try {
       await navigator.clipboard.writeText(cliAuthToken);
-      setToastMessage("copied");
+      setToastMessage("copied key");
+      setTimeout(() => setToastMessage(null), 2000);
+    } catch {
+      setTokenError("copy failed — use manual selection");
+    }
+  };
+
+  const handleCopyCommand = async () => {
+    if (!cliAuthToken) return;
+    try {
+      await navigator.clipboard.writeText(`npx integrateapi login --key ${cliAuthToken}`);
+      setToastMessage("copied command");
       setTimeout(() => setToastMessage(null), 2000);
     } catch {
       setTokenError("copy failed — use manual selection");
@@ -196,11 +207,21 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
           {cliAuthToken ? (
             <>
               <div>
-                <p className="account-label">Current auth token</p>
+                <p className="account-label">API Key</p>
                 <div className="cli-token-display">
                   <code>sk_live_****...{cliAuthToken.slice(-4)}</code>
                   <button onClick={handleCopyToken} className="cli-copy-btn">
-                    Copy
+                    Copy Key
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="account-label">Full command</p>
+                <div className="cli-token-display">
+                  <code>npx integrateapi login --key sk_live_****...{cliAuthToken.slice(-4)}</code>
+                  <button onClick={handleCopyCommand} className="cli-copy-btn">
+                    Copy Command
                   </button>
                 </div>
               </div>
