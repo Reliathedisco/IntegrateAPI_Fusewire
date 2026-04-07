@@ -24,6 +24,41 @@ function isValidEmail(email: string): boolean {
   return true;
 }
 
+async function fireWebhook(payload: {
+  email: string;
+  message: string;
+  topic: string;
+}): Promise<void> {
+  const webhookUrl = process.env.SUPPORT_ESCALATION_WEBHOOK_URL?.trim();
+  if (!webhookUrl) return;
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "support_escalation",
+        timestamp: new Date().toISOString(),
+        contact: {
+          email: payload.email,
+          message: payload.message,
+          topic: payload.topic || "support_chat_handoff",
+        },
+        source: "integrateapi_support_chat",
+      }),
+    });
+
+    logger.info("support_escalation_webhook", {
+      status: res.status,
+      ok: res.ok,
+    });
+  } catch (e) {
+    logger.warn("support_escalation_webhook_failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
+}
+
 export async function POST(req: Request) {
   let body: Body;
   try {
@@ -70,14 +105,18 @@ export async function POST(req: Request) {
     topic: topic || undefined,
     messageChars: message.length,
     emailDelivery: Boolean(apiKey && to && from),
+    webhookConfigured: Boolean(process.env.SUPPORT_ESCALATION_WEBHOOK_URL?.trim()),
   });
+
+  // Fire webhook (non-blocking) for CRM integrations (HubSpot, Pipedrive, etc.)
+  void fireWebhook({ email, message, topic });
 
   if (!apiKey || !to || !from) {
     return NextResponse.json({
       ok: true,
       emailSent: false,
       detail:
-        "Thanks — we logged your request. Email handoff is not configured (set RESEND_API_KEY, SUPPORT_ESCALATION_TO, and a from address).",
+        "Thanks — we logged your request. Email delivery is not configured (set RESEND_API_KEY, SUPPORT_ESCALATION_TO, and a from address).",
     });
   }
 

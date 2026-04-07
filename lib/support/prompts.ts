@@ -3,10 +3,22 @@ import type { RetrievedChunk, SupportIntent } from "./types";
 const UNKNOWN_PHRASE =
   "I'm not sure based on the available information.";
 
+const INTENT_PROMPTS: Record<SupportIntent, string> = {
+  billing:
+    "- Prioritize billing, plans, subscription, and pricing clarity. If pricing details are missing, do not guess numbers.\n- Be empathetic — billing questions often involve frustration or urgency.\n- If the user seems upset about a charge, acknowledge their concern before answering.",
+  technical:
+    "- Prioritize implementation details, CLI usage, setup order, and common debugging hints grounded in context.\n- Use code formatting for commands and file paths.\n- Suggest npx integrateapi doctor if the user seems stuck on config issues.",
+  sales:
+    "- Prioritize fit, capabilities, trust signals, and next-step guidance. Keep claims anchored to context.\n- Be enthusiastic but honest — never oversell features not in context.\n- Suggest the Pro plan or relevant features when appropriate.",
+  general:
+    "- Prioritize clear general support guidance grounded in context.\n- If the question could fit billing/technical/sales, answer broadly and offer to dive deeper.",
+};
+
 export function buildSystemPrompt(
   contextChunks: RetrievedChunk[],
   escalationSuggested: boolean,
   intent: SupportIntent,
+  conversationSummary?: string,
 ): string {
   const context =
     contextChunks.length === 0
@@ -18,14 +30,9 @@ export function buildSystemPrompt(
           )
           .join("\n\n---\n\n");
 
-  const intentGuidance =
-    intent === "billing"
-      ? "- Prioritize billing, plans, subscription, and pricing clarity. If pricing details are missing, do not guess numbers."
-      : intent === "technical"
-        ? "- Prioritize implementation details, CLI usage, setup order, and common debugging hints grounded in context."
-        : intent === "sales"
-          ? "- Prioritize fit, capabilities, trust signals, and next-step guidance. Keep claims anchored to context."
-          : "- Prioritize clear general support guidance grounded in context.";
+  const conversationBlock = conversationSummary
+    ? `\nCONVERSATION HISTORY:\n${conversationSummary}\n\nUse this history to understand follow-up questions and maintain context. Do not repeat information already given unless the user asks for clarification.\n`
+    : "";
 
   return `You are a human, helpful IntegrateAPI customer support specialist.
 
@@ -39,8 +46,16 @@ STYLE:
 - Concise and clear: no filler, no long preambles.
 - Warm and professional — like a capable support teammate, not a robot.
 - Intent routing: ${intent} intent.
-${intentGuidance}
+${INTENT_PROMPTS[intent]}
 
+SOURCE ATTRIBUTION:
+- When using information from a specific context chunk, mention its topic naturally (e.g. "According to the CLI docs..." or "Based on our pricing...").
+- This helps users verify your answers.
+
+MULTI-TURN AWARENESS:
+- If the user references something from earlier in the conversation, use the conversation history to give a coherent answer.
+- Do not ask the user to repeat themselves if the context is already available.
+${conversationBlock}
 ESCALATION:
 ${
   escalationSuggested

@@ -46,6 +46,7 @@ export type PreparedOk = {
   topScore: number;
   confidence: SupportConfidence;
   escalationSuggested: boolean;
+  conversationSummary?: string;
 };
 
 export type PreparedTurn = PreparedNoop | PreparedOk;
@@ -78,15 +79,22 @@ function isLikelyFollowUp(q: string): boolean {
 
 function buildRetrievalQuery(history: ChatMessage[], question: string): string {
   if (!isLikelyFollowUp(question)) return question;
-  const previousUser = [...history]
-    .reverse()
-    .find((m) => m.role === "user" && m.content.trim() !== question.trim());
-  if (!previousUser) return question;
-  return `${previousUser.content.trim()}\nFollow-up question: ${question.trim()}`;
+
+  // For follow-ups, combine recent user messages to build richer retrieval query
+  const userMessages = history
+    .filter((m) => m.role === "user")
+    .map((m) => m.content.trim())
+    .filter((c) => c !== question.trim());
+
+  const recentContext = userMessages.slice(-2).join(" ");
+  if (!recentContext) return question;
+
+  return `${recentContext}\nFollow-up question: ${question.trim()}`;
 }
 
 export async function prepareSupportTurn(
   messages: ChatMessage[],
+  conversationSummary?: string,
 ): Promise<PreparedTurn> {
   const history = sanitizeHistory(messages);
   const question = lastUserMessage(history);
@@ -95,7 +103,7 @@ export async function prepareSupportTurn(
       kind: "noop",
       history,
       assistantHint:
-        "Tell me what you’re trying to do with IntegrateAPI and I’ll help.",
+        "Tell me what you're trying to do with IntegrateAPI and I'll help.",
     };
   }
 
@@ -114,6 +122,7 @@ export async function prepareSupportTurn(
     confidence,
     sourceIds: chunks.map((c) => c.id),
     escalationSuggested,
+    hasConversationContext: Boolean(conversationSummary),
   });
 
   return {
@@ -126,6 +135,7 @@ export async function prepareSupportTurn(
     topScore,
     confidence,
     escalationSuggested,
+    conversationSummary,
   };
 }
 
@@ -140,8 +150,9 @@ export type ChatRunnerResult = {
 
 export async function runSupportChat(
   messages: ChatMessage[],
+  conversationSummary?: string,
 ): Promise<ChatRunnerResult> {
-  const prepared = await prepareSupportTurn(messages);
+  const prepared = await prepareSupportTurn(messages, conversationSummary);
   if (prepared.kind === "noop") {
     return {
       reply: prepared.assistantHint,
@@ -159,6 +170,7 @@ export async function runSupportChat(
     contextChunks: prepared.chunks,
     escalationSuggested: prepared.escalationSuggested,
     intent: prepared.intent,
+    conversationSummary: prepared.conversationSummary,
   });
 
   logger.info("support_reply", {

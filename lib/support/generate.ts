@@ -120,11 +120,13 @@ export async function generateSupportReply(params: {
   contextChunks: RetrievedChunk[];
   escalationSuggested: boolean;
   intent?: SupportIntent;
+  conversationSummary?: string;
 }): Promise<{ text: string; sources: SupportSourceRef[] }> {
   const system = buildSystemPrompt(
     params.contextChunks,
     params.escalationSuggested,
     params.intent ?? "general",
+    params.conversationSummary,
   );
   const provider = getSupportLlmProvider();
   const text =
@@ -143,6 +145,7 @@ export async function streamSupportReply(params: {
   contextChunks: RetrievedChunk[];
   escalationSuggested: boolean;
   intent?: SupportIntent;
+  conversationSummary?: string;
 }): Promise<{
   streamText: AsyncGenerator<string, void, unknown>;
   sources: SupportSourceRef[];
@@ -151,6 +154,7 @@ export async function streamSupportReply(params: {
     params.contextChunks,
     params.escalationSuggested,
     params.intent ?? "general",
+    params.conversationSummary,
   );
   const provider = getSupportLlmProvider();
 

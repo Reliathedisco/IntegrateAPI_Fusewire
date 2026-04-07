@@ -29,9 +29,16 @@ const SUGGESTED = [
   "How does IntegrateAPI work?",
   "What CLI commands should I know?",
   "How do I add Stripe to my project?",
-  "What’s included in the Free vs Pro plans?",
+  "What's included in the Free vs Pro plans?",
   "Where do I put API keys after installing an integration?",
 ];
+
+const INTENT_LABELS: Record<Intent, string> = {
+  billing: "Billing",
+  technical: "Technical",
+  sales: "Sales",
+  general: "General",
+};
 
 type StreamEvent =
   | {
@@ -82,6 +89,8 @@ export default function SupportChat() {
   const [feedbackPendingByTurn, setFeedbackPendingByTurn] = useState<
     Record<string, boolean>
   >({});
+  const [feedbackNotes, setFeedbackNotes] = useState<Record<string, string>>({});
+  const [feedbackNoteOpen, setFeedbackNoteOpen] = useState<Record<string, boolean>>({});
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -324,7 +333,7 @@ export default function SupportChat() {
   };
 
   const submitFeedback = useCallback(
-    async (turnId: string, vote: -1 | 1) => {
+    async (turnId: string, vote: -1 | 1, note?: string) => {
       if (!conversationId) return;
       setFeedbackPendingByTurn((prev) => ({ ...prev, [turnId]: true }));
       try {
@@ -335,6 +344,7 @@ export default function SupportChat() {
             conversationId,
             turnId,
             vote,
+            note: note || undefined,
           }),
         });
         if (!res.ok) {
@@ -412,6 +422,8 @@ export default function SupportChat() {
               setConversationId(null);
               setFeedbackByTurn({});
               setFeedbackPendingByTurn({});
+              setFeedbackNotes({});
+              setFeedbackNoteOpen({});
               setError(null);
               setHandoffOpen(false);
               setHandoffStatus("idle");
@@ -455,59 +467,92 @@ export default function SupportChat() {
               key={`${i}-${m.role}`}
               className={`support-msg support-msg-${m.role}`}
             >
-              <div className="support-msg-label">
-                {m.role === "user" ? "You" : "IntegrateAPI"}
+              <div className="support-msg-header">
+                <div className="support-msg-label">
+                  {m.role === "user" ? "You" : "IntegrateAPI"}
+                </div>
+                {m.role === "assistant" && m.intent && (
+                  <span className={`support-intent-badge support-intent-${m.intent}`}>
+                    {INTENT_LABELS[m.intent]}
+                  </span>
+                )}
               </div>
+
               {m.role === "assistant" && m.confidence === "low" && (
-                <div className="support-msg-warning">
+                <div className="support-confidence-badge support-confidence-low">
                   This answer may be incomplete
                   {typeof m.topScore === "number" && (
-                    <span className="support-msg-warning-score">
+                    <span className="support-confidence-score">
                       score {m.topScore.toFixed(2)}
                     </span>
                   )}
                 </div>
               )}
+              {m.role === "assistant" && m.confidence === "medium" && (
+                <div className="support-confidence-badge support-confidence-medium">
+                  Moderate confidence
+                  {typeof m.topScore === "number" && (
+                    <span className="support-confidence-score">
+                      score {m.topScore.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="support-msg-body">{m.content}</div>
+
               {m.role === "assistant" &&
                 m.sources &&
                 m.sources.length > 0 && (
                   <div className="support-msg-sources">
-                    <span className="support-msg-sources-label">
-                      Source citations
-                    </span>
                     <div className="support-source-pills">
-                      {m.sources.map((s) => (
-                        sourceHref(s.source) ? (
+                      {m.sources.map((s) => {
+                        const href = sourceHref(s.source);
+                        return href ? (
                           <a
                             key={s.id}
-                            href={sourceHref(s.source) ?? undefined}
+                            href={href}
                             className="support-source-pill"
                             target="_blank"
                             rel="noreferrer"
                             title={s.source}
                           >
-                            Source: {s.title}
+                            <span className="support-source-pill-icon">
+                              &#9679;
+                            </span>
+                            {s.title}
                           </a>
                         ) : (
-                          <span key={s.id} className="support-source-pill" title={s.source}>
-                            Source: {s.title}
+                          <span
+                            key={s.id}
+                            className="support-source-pill"
+                            title={s.source}
+                          >
+                            <span className="support-source-pill-icon">
+                              &#9679;
+                            </span>
+                            {s.title}
                           </span>
-                        )
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
+
               {m.role === "assistant" && m.turnId && (
                 <div className="support-feedback">
-                  <span className="support-feedback-label">Was this useful?</span>
+                  <span className="support-feedback-label">Helpful?</span>
                   <button
                     type="button"
                     className={`support-feedback-btn ${
                       feedbackByTurn[m.turnId] === 1 ? "active" : ""
                     }`}
                     disabled={feedbackPendingByTurn[m.turnId]}
-                    onClick={() => void submitFeedback(m.turnId as string, 1)}
+                    onClick={() => {
+                      const note = feedbackNotes[m.turnId!] || "";
+                      void submitFeedback(m.turnId as string, 1, note);
+                    }}
+                    title="Helpful"
                   >
                     👍
                   </button>
@@ -517,10 +562,65 @@ export default function SupportChat() {
                       feedbackByTurn[m.turnId] === -1 ? "active" : ""
                     }`}
                     disabled={feedbackPendingByTurn[m.turnId]}
-                    onClick={() => void submitFeedback(m.turnId as string, -1)}
+                    onClick={() => {
+                      if (!feedbackNoteOpen[m.turnId!]) {
+                        setFeedbackNoteOpen((prev) => ({
+                          ...prev,
+                          [m.turnId!]: true,
+                        }));
+                      } else {
+                        const note = feedbackNotes[m.turnId!] || "";
+                        void submitFeedback(m.turnId as string, -1, note);
+                      }
+                    }}
+                    title="Not helpful"
                   >
                     👎
                   </button>
+                  {feedbackNoteOpen[m.turnId] &&
+                    !feedbackByTurn[m.turnId] && (
+                      <div className="support-feedback-note">
+                        <input
+                          type="text"
+                          className="support-feedback-note-input"
+                          placeholder="What was wrong? (optional)"
+                          value={feedbackNotes[m.turnId] ?? ""}
+                          onChange={(e) =>
+                            setFeedbackNotes((prev) => ({
+                              ...prev,
+                              [m.turnId!]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              void submitFeedback(
+                                m.turnId as string,
+                                -1,
+                                feedbackNotes[m.turnId!] || "",
+                              );
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="support-feedback-note-send"
+                          onClick={() => {
+                            void submitFeedback(
+                              m.turnId as string,
+                              -1,
+                              feedbackNotes[m.turnId!] || "",
+                            );
+                          }}
+                        >
+                          Send
+                        </button>
+                      </div>
+                    )}
+                  {feedbackByTurn[m.turnId] && (
+                    <span className="support-feedback-thanks">
+                      Thanks for the feedback
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -580,14 +680,13 @@ export default function SupportChat() {
           onClick={() => setHandoffOpen((o) => !o)}
           aria-expanded={handoffOpen}
         >
-          {handoffOpen ? "Hide follow-up form" : "Talk to a human (demo)"}
+          {handoffOpen ? "Hide follow-up form" : "Talk to a human"}
         </button>
 
         {handoffOpen && (
           <div className="support-handoff-panel">
             <p className="support-handoff-lead">
-              Leave an email and a short note. This demo logs the request only —
-              no inbox delivery yet.
+              Leave an email and a short note. Our team will follow up.
             </p>
             <form className="support-handoff-form" onSubmit={submitHandoff}>
               <label className="support-field">
@@ -616,7 +715,7 @@ export default function SupportChat() {
                 className="btn-ghost"
                 disabled={handoffStatus === "sending"}
               >
-                {handoffStatus === "sending" ? "Sending…" : "Submit"}
+                {handoffStatus === "sending" ? "Sending..." : "Submit"}
               </button>
             </form>
             {handoffStatus === "sent" && handoffResultText && (

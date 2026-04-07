@@ -5,9 +5,11 @@ import {
   sanitizeHistory,
 } from "@/lib/support/chat-runner";
 import {
+  buildConversationSummary,
   ensureConversationSession,
   isValidConversationId,
   loadConversationHistory,
+  loadConversationTurns,
   logKnowledgeGap,
   persistSupportTurn,
 } from "@/lib/support/conversations";
@@ -82,7 +84,11 @@ export async function POST(req: Request) {
     : uuidv4();
   await ensureConversationSession(conversationId);
 
+  // Load persisted history for multi-turn context
   const persistedHistory = await loadConversationHistory(conversationId);
+  const persistedTurns = await loadConversationTurns(conversationId);
+  const conversationSummary = buildConversationSummary(persistedTurns);
+
   const incomingHistory = sanitizeHistory(messages);
   const mergedHistory =
     incomingHistory.length <= 2 && persistedHistory.length > 0
@@ -95,7 +101,7 @@ export async function POST(req: Request) {
 
   if (!wantStream) {
     try {
-      const prepared = await prepareSupportTurn(mergedHistory);
+      const prepared = await prepareSupportTurn(mergedHistory, conversationSummary);
       if (prepared.kind === "noop") {
         return NextResponse.json({
           reply: prepared.assistantHint,
@@ -113,6 +119,7 @@ export async function POST(req: Request) {
         contextChunks: prepared.chunks,
         escalationSuggested: prepared.escalationSuggested,
         intent: prepared.intent,
+        conversationSummary: prepared.conversationSummary,
       });
       const userMessage = lastUserMessage(mergedHistory) ?? "";
       const turnId = await persistSupportTurn({
@@ -161,7 +168,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const prepared = await prepareSupportTurn(mergedHistory);
+    const prepared = await prepareSupportTurn(mergedHistory, conversationSummary);
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -202,6 +209,7 @@ export async function POST(req: Request) {
           contextChunks: prepared.chunks,
           escalationSuggested: prepared.escalationSuggested,
           intent: prepared.intent,
+          conversationSummary: prepared.conversationSummary,
         });
 
         let outChars = 0;

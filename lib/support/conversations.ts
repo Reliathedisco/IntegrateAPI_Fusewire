@@ -29,6 +29,14 @@ export async function ensureConversationSession(sessionId: string): Promise<void
   }
 }
 
+export type PersistedTurn = {
+  user_message: string;
+  assistant_message: string;
+  intent: string;
+  top_score: number;
+  confidence: string;
+};
+
 export async function loadConversationHistory(
   sessionId: string,
   turnLimit = 6,
@@ -65,6 +73,45 @@ export async function loadConversationHistory(
     });
     return [];
   }
+}
+
+export async function loadConversationTurns(
+  sessionId: string,
+  turnLimit = 6,
+): Promise<PersistedTurn[]> {
+  if (!supportsPersistentMemory()) return [];
+  try {
+    const res = await pool.query<PersistedTurn>(
+      `
+      SELECT user_message, assistant_message, intent, top_score, confidence
+      FROM support_chat_turns
+      WHERE session_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2
+      `,
+      [sessionId, turnLimit],
+    );
+    return [...res.rows].reverse();
+  } catch (e) {
+    logger.warn("support_turns_load_failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
+    return [];
+  }
+}
+
+/**
+ * Build a compact conversation summary from prior turns.
+ * This gives the LLM real multi-turn context without re-embedding every message.
+ */
+export function buildConversationSummary(turns: PersistedTurn[]): string {
+  if (turns.length === 0) return "";
+  const lines: string[] = ["Previous conversation:"];
+  for (const t of turns) {
+    lines.push(`User: ${t.user_message.slice(0, 300)}`);
+    lines.push(`Assistant: ${t.assistant_message.slice(0, 300)}`);
+  }
+  return lines.join("\n");
 }
 
 export async function persistSupportTurn(params: {
