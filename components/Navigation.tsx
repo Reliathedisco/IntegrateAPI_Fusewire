@@ -1,10 +1,12 @@
 "use client";
 
+import { useClerkUiEnabled } from "@/components/ClerkGate";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export default function Navigation() {
+  const clerkUi = useClerkUiEnabled();
   const pathname = usePathname();
 
   const isActive = (path: string) => {
@@ -46,20 +48,37 @@ export default function Navigation() {
         <Link href="/docs" className={isActive("/docs") ? "active" : ""}>
           Docs
         </Link>
-        <SignedIn>
-          <Link
-            href="/account"
-            className={isActive("/account") ? "active" : ""}
-          >
-            Account
-          </Link>
-          <UserButton afterSignOutUrl="/" />
-        </SignedIn>
-        <SignedOut>
+        <Link
+          href="/support"
+          className={isActive("/support") ? "active" : ""}
+        >
+          Support
+        </Link>
+        {clerkUi ? (
+          <>
+            <SignedIn>
+              <Link
+                href="/account"
+                className={isActive("/account") ? "active" : ""}
+              >
+                Account
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                className={isActive("/sign-in") ? "active" : ""}
+              >
+                Sign In
+              </Link>
+            </SignedOut>
+          </>
+        ) : (
           <Link href="/sign-in" className={isActive("/sign-in") ? "active" : ""}>
             Sign In
           </Link>
-        </SignedOut>
+        )}
       </div>
     </nav>
   );

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { logger } from "@/lib/logger";
+import { resendIdempotencyKey, resendRequest } from "@/lib/resend-api";
 
 export const runtime = "nodejs";
 
@@ -20,42 +20,6 @@ function isValidEmail(email: string): boolean {
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ ok: false, error: message }, { status });
-}
-
-function idempotencyKey(prefix: string, value: string): string {
-  const hash = crypto.createHash("sha256").update(value).digest("hex");
-  return `${prefix}-${hash}`.slice(0, 256);
-}
-
-async function resendRequest<T>(
-  apiKey: string,
-  path: string,
-  init: RequestInit & { idempotencyKey?: string } = {}
-): Promise<{ ok: true; data: T } | { ok: false; status: number; error: string }> {
-  const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${apiKey}`);
-  headers.set("Content-Type", "application/json");
-  if (init.idempotencyKey) {
-    headers.set("Idempotency-Key", init.idempotencyKey);
-  }
-
-  const res = await fetch(`https://api.resend.com${path}`, {
-    ...init,
-    headers,
-  });
-
-  const json = await res.json().catch(() => null);
-
-  if (res.ok) {
-    return { ok: true, data: json as T };
-  }
-
-  const message =
-    (json && typeof json === "object" && "message" in json && typeof (json as any).message === "string"
-      ? (json as any).message
-      : `Resend request failed (${res.status})`);
-
-  return { ok: false, status: res.status, error: message };
 }
 
 export async function POST(req: NextRequest) {
@@ -84,7 +48,7 @@ export async function POST(req: NextRequest) {
       unsubscribed: false,
       ...(segmentId ? { segments: [{ id: segmentId }] } : {}),
     }),
-    idempotencyKey: idempotencyKey("fusewire-contact", email),
+    idempotencyKey: resendIdempotencyKey("fusewire-contact", email),
   });
 
   if (!createContact.ok) {
@@ -130,7 +94,7 @@ export async function POST(req: NextRequest) {
           "Welcome to FuseWire. You’re subscribed to the IntegrateAPI newsletter. Start here: https://integrateapi.io/templates",
         ...(replyTo ? { reply_to: replyTo } : {}),
       }),
-      idempotencyKey: idempotencyKey("fusewire-welcome", email),
+      idempotencyKey: resendIdempotencyKey("fusewire-welcome", email),
     });
 
     if (!send.ok) {
