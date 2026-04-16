@@ -152,6 +152,9 @@ export async function POST(req: Request) {
       });
     } catch (e) {
       console.error("[support-chat] non-stream catch:", e instanceof Error ? e.message : String(e));
+      if (e instanceof Error && (e as Error & { cause?: unknown }).cause) {
+        console.error("[support-chat] cause:", String((e as Error & { cause?: unknown }).cause));
+      }
       logger.error("support_chat_failed", {
         message: e instanceof Error ? e.message : String(e),
       });
