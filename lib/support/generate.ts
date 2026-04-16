@@ -1,6 +1,4 @@
-import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
-import { getAnthropic } from "./anthropic-client";
 import {
   anthropicChatModel,
   getSupportLlmProvider,
@@ -35,7 +33,7 @@ function toOpenAIMessages(
   }));
 }
 
-function toAnthropicMessages(history: ChatMessage[]): MessageParam[] {
+function toAnthropicMessages(history: ChatMessage[]): Array<{ role: "user" | "assistant"; content: string }> {
   return history.map((m) => ({
     role: m.role,
     content: m.content,
@@ -65,23 +63,85 @@ async function* streamAnthropicText(
   system: string,
   history: ChatMessage[],
 ): AsyncGenerator<string, void, unknown> {
-  const client = getAnthropic();
-  const stream = await client.messages.stream({
-    model: anthropicChatModel(),
-    max_tokens: 700,
-    temperature: 0.3,
-    system,
-    messages: toAnthropicMessages(history),
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key?.trim()) throw new Error("ANTHROPIC_API_KEY is not set");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": key.trim(),
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: anthropicChatModel(),
+      max_tokens: 700,
+      temperature: 0.3,
+      stream: true,
+      system,
+      messages: toAnthropicMessages(history),
+    }),
   });
 
-  for await (const event of stream) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta.type === "text_delta"
-    ) {
-      yield event.delta.text;
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Anthropic API error ${res.status}: ${text}`);
+  }
+
+  const decoder = new TextDecoder();
+  const reader = res.body.getReader();
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (payload === "[DONE]") return;
+      try {
+        const ev = JSON.parse(payload) as { type: string; delta?: { type: string; text?: string } };
+        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta" && ev.delta.text) {
+          yield ev.delta.text;
+        }
+      } catch { /* skip malformed */ }
     }
   }
+}
+
+async function completeAnthropic(
+  system: string,
+  history: ChatMessage[],
+): Promise<string> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key?.trim()) throw new Error("ANTHROPIC_API_KEY is not set");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": key.trim(),
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: anthropicChatModel(),
+      max_tokens: 700,
+      temperature: 0.3,
+      system,
+      messages: toAnthropicMessages(history),
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Anthropic API error ${res.status}: ${text}`);
+  }
+
+  const data = await res.json() as { content: Array<{ type: string; text: string }> };
+  const block = data.content?.find((b) => b.type === "text");
+  return block?.text?.trim() ?? "";
 }
 
 async function completeOpenAI(
@@ -96,23 +156,6 @@ async function completeOpenAI(
     max_tokens: 700,
   });
   return completion.choices[0]?.message?.content?.trim() ?? "";
-}
-
-async function completeAnthropic(
-  system: string,
-  history: ChatMessage[],
-): Promise<string> {
-  const client = getAnthropic();
-  const msg = await client.messages.create({
-    model: anthropicChatModel(),
-    max_tokens: 700,
-    temperature: 0.3,
-    system,
-    messages: toAnthropicMessages(history),
-  });
-  const block = msg.content.find((b) => b.type === "text");
-  if (block && block.type === "text") return block.text.trim();
-  return "";
 }
 
 export async function generateSupportReply(params: {

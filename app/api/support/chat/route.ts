@@ -95,9 +95,7 @@ export async function POST(req: Request) {
 
   if (!wantStream) {
     try {
-      console.log("[support-chat] entering non-stream try block");
       const prepared = await prepareSupportTurn(mergedHistory);
-      console.log("[support-chat] prepareSupportTurn done, kind:", prepared.kind);
       if (prepared.kind === "noop") {
         return NextResponse.json({
           reply: prepared.assistantHint,
@@ -110,7 +108,6 @@ export async function POST(req: Request) {
         });
       }
 
-      console.log("[support-chat] calling generateSupportReply");
       const result = await generateSupportReply({
         history: prepared.history,
         contextChunks: prepared.chunks,
@@ -153,10 +150,6 @@ export async function POST(req: Request) {
         conversationId,
       });
     } catch (e) {
-      console.error("[support-chat] non-stream catch:", e instanceof Error ? e.message : String(e));
-      if (e instanceof Error && (e as Error & { cause?: unknown }).cause) {
-        console.error("[support-chat] cause:", String((e as Error & { cause?: unknown }).cause));
-      }
       logger.error("support_chat_failed", {
         message: e instanceof Error ? e.message : String(e),
       });
