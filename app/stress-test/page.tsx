@@ -1,192 +1,213 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Container } from "@/components/ui/Container";
+import { Section } from "@/components/ui/Section";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Eyebrow } from "@/components/ui/Eyebrow";
+import { Pill } from "@/components/ui/Pill";
+import { Card } from "@/components/ui/Card";
+import CodeBlock from "@/components/CodeBlock";
 
 const features = [
   {
-    title: "Scaling Risk Detection",
-    description: "Identify bottlenecks in your architecture before they become incidents under load.",
-    icon: "⚡",
+    title: "Scaling risk detection",
+    body: "Find bottlenecks in your architecture before they show up as incidents under load.",
   },
   {
-    title: "Auth & Billing Evaluation",
-    description: "Analyze your authentication flow and billing integration for edge cases and security gaps.",
-    icon: "🔐",
+    title: "Auth & billing analysis",
+    body: "Audit your authentication flow and billing integration for edge cases and security gaps.",
   },
   {
-    title: "Architecture Scoring",
-    description: "Get a comprehensive score of your SaaS architecture with detailed breakdown.",
-    icon: "📊",
+    title: "Architecture scoring",
+    body: "Get a single number for your SaaS architecture with a detailed breakdown by category.",
   },
   {
-    title: "Actionable Recommendations",
-    description: "Receive specific, prioritized recommendations to improve your stack.",
-    icon: "✅",
+    title: "Actionable recommendations",
+    body: "Receive prioritized, specific recommendations — not generic advice.",
   },
 ];
 
-const checkItems = [
-  { category: "API Rate Limits", checks: ["Rate limit headers", "Retry logic", "Backoff strategy"] },
-  { category: "Authentication", checks: ["Token refresh", "Session management", "MFA handling"] },
-  { category: "Database", checks: ["Connection pooling", "Query optimization", "Index usage"] },
-  { category: "Error Handling", checks: ["Graceful degradation", "Circuit breakers", "Fallback strategies"] },
-  { category: "Caching", checks: ["Cache invalidation", "TTL configuration", "Cache warming"] },
-  { category: "Webhooks", checks: ["Idempotency", "Retry handling", "Signature verification"] },
+const checks = [
+  { category: "API rate limits", items: ["Rate limit headers", "Retry logic", "Backoff strategy"] },
+  { category: "Authentication", items: ["Token refresh", "Session management", "MFA handling"] },
+  { category: "Database", items: ["Connection pooling", "Query optimization", "Index usage"] },
+  { category: "Error handling", items: ["Graceful degradation", "Circuit breakers", "Fallback strategies"] },
+  { category: "Caching", items: ["Cache invalidation", "TTL configuration", "Cache warming"] },
+  { category: "Webhooks", items: ["Idempotency", "Retry handling", "Signature verification"] },
 ];
 
-function CommandBlock({ command }: { command: string }) {
-  const [copied, setCopied] = useState(false);
+const SAMPLE_OUTPUT = `$ integrateapi stress-test
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(command);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback
-    }
-  };
+Analyzing your SaaS architecture...
 
-  return (
-    <div className="stress-command">
-      <code>{command}</code>
-      <button onClick={handleCopy} className="stress-copy-btn">
-        {copied ? "✓ Copied" : "Copy"}
-      </button>
-    </div>
-  );
-}
+────────────────────────────────────────
 
-export default function StressTestPage() {
-  return (
-    <div className="stress-page">
-      {/* Hero */}
-      <section className="stress-hero">
-        <div className="stress-hero-grid"></div>
-        <div className="stress-hero-content">
-          <div className="stress-badge">CLI Tool</div>
-          <h1>Stress Test</h1>
-          <p className="stress-hero-sub">
-            Analyze your SaaS architecture for scaling risks, security gaps, and integration issues before they become production incidents.
-          </p>
-          <CommandBlock command="integrateapi stress-test" />
-        </div>
-      </section>
+Architecture Score: 78/100
 
-      {/* Features */}
-      <section className="stress-features">
-        <h2>What It Checks</h2>
-        <div className="stress-features-grid">
-          {features.map((feature) => (
-            <div key={feature.title} className="stress-feature-card">
-              <span className="stress-feature-icon">{feature.icon}</span>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+✓ Stripe integration: webhook signatures verified
+✓ Clerk auth: token refresh implemented
+! Database: missing connection pooling
+! API calls: no retry logic detected
+✗ Rate limiting: no backoff strategy found
 
-      {/* Checklist */}
-      <section className="stress-checklist">
-        <h2>Analysis Categories</h2>
-        <p className="stress-checklist-sub">
-          The stress test evaluates your codebase across these critical areas:
-        </p>
-        <div className="stress-checklist-grid">
-          {checkItems.map((item) => (
-            <div key={item.category} className="stress-checklist-card">
-              <h4>{item.category}</h4>
-              <ul>
-                {item.checks.map((check) => (
-                  <li key={check}>
-                    <span className="stress-check-icon">→</span>
-                    {check}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
+────────────────────────────────────────
 
-      {/* How It Works */}
-      <section className="stress-how">
-        <h2>How It Works</h2>
-        <div className="stress-steps">
-          <div className="stress-step">
-            <div className="stress-step-num">1</div>
-            <h3>Run the Command</h3>
-            <p>Execute the stress test CLI in your project root directory.</p>
-            <CommandBlock command="integrateapi stress-test" />
-          </div>
-          <div className="stress-step">
-            <div className="stress-step-num">2</div>
-            <h3>Automatic Analysis</h3>
-            <p>The tool scans your codebase, config files, and integration patterns.</p>
-          </div>
-          <div className="stress-step">
-            <div className="stress-step-num">3</div>
-            <h3>Get Your Report</h3>
-            <p>Receive a detailed report with scores, issues, and recommendations.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Sample Output */}
-      <section className="stress-output">
-        <h2>Sample Output</h2>
-        <div className="stress-terminal">
-          <div className="stress-terminal-bar">
-            <div className="t-dot red"></div>
-            <div className="t-dot yellow"></div>
-            <div className="t-dot green"></div>
-            <span>integrateapi stress-test</span>
-          </div>
-          <div className="stress-terminal-body">
-            <pre>{`$ integrateapi stress-test
-
-🔍 Analyzing your SaaS architecture...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 Architecture Score: 78/100
-
-✅ Stripe integration: Webhook signatures verified
-✅ Clerk auth: Token refresh implemented
-⚠️  Database: Missing connection pooling
-⚠️  API calls: No retry logic detected
-❌ Rate limiting: No backoff strategy found
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 Recommendations:
+Recommendations:
   1. Add connection pooling to database client
   2. Implement exponential backoff for API calls
   3. Add circuit breaker for external services
 
-Run 'integrateapi fix' to auto-fix issues.`}</pre>
+Run 'integrateapi fix' to auto-fix issues.`;
+
+export default function StressTestPage() {
+  return (
+    <>
+      <section className="border-b border-line py-20 md:py-24">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center">
+            <Pill>CLI tool</Pill>
+            <h1 className="mt-5 font-sans text-4xl/[1.05] font-semibold tracking-tight text-ink md:text-5xl/[1.05]">
+              Stress test your SaaS architecture.
+            </h1>
+            <p className="mx-auto mt-5 max-w-md text-base/7 text-mute">
+              Find scaling risks, security gaps, and integration issues before
+              they become production incidents.
+            </p>
+            <div className="mx-auto mt-8 max-w-sm">
+              <CodeBlock
+                code="npx integrateapi stress-test"
+                variant="inline"
+              />
+            </div>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* CTA */}
-      <section className="stress-cta">
-        <h2>Ready to stress test your stack?</h2>
-        <CommandBlock command="integrateapi stress-test" />
-        <div className="stress-cta-links">
-          <Link href="/templates" className="stress-link">
-            Browse Templates →
-          </Link>
-          <Link href="/registry" className="stress-link">
-            Explore Registry →
-          </Link>
-          <Link href="/docs" className="stress-link">
-            Read Docs →
-          </Link>
-        </div>
+      <Section className="py-24 md:py-32">
+        <Container>
+          <SectionHeading align="center" eyebrow="What it checks" title="Four lenses on your stack." />
+          <div className="mt-14 grid gap-4 md:grid-cols-2">
+            {features.map((feature) => (
+              <Card key={feature.title} hover>
+                <h3 className="text-base font-semibold tracking-tight text-ink">
+                  {feature.title}
+                </h3>
+                <p className="mt-2 text-sm/6 text-mute">{feature.body}</p>
+              </Card>
+            ))}
+          </div>
+        </Container>
+      </Section>
+
+      <Section className="bg-paper-soft py-24 md:py-32">
+        <Container>
+          <SectionHeading
+            align="center"
+            eyebrow="Analysis categories"
+            title="Six dimensions, evaluated automatically."
+            subhead="The stress test evaluates your codebase across these critical areas."
+          />
+          <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {checks.map((check) => (
+              <div
+                key={check.category}
+                className="rounded-2xl border border-line bg-card p-6"
+              >
+                <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-accent">
+                  {check.category}
+                </h3>
+                <ul className="mt-4 flex flex-col gap-2.5">
+                  {check.items.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-2.5 text-sm/6 text-mute"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="mt-2 size-1.5 shrink-0 rounded-full bg-accent"
+                      />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </Section>
+
+      <Section className="py-24 md:py-32">
+        <Container size="md">
+          <div className="grid items-start gap-12 md:grid-cols-2 md:gap-16">
+            <div>
+              <Eyebrow>How it works</Eyebrow>
+              <h2 className="mt-3 font-sans text-3xl/[1.1] font-semibold tracking-tight text-ink md:text-4xl/[1.05]">
+                Run, scan, report.
+              </h2>
+              <ol className="mt-8 flex flex-col gap-5">
+                {[
+                  { t: "Run the command", b: "Execute the stress test CLI in your project root directory." },
+                  { t: "Automatic analysis", b: "The tool scans your codebase, config files, and integration patterns." },
+                  { t: "Get your report", b: "Receive a detailed report with scores, issues, and recommendations." },
+                ].map((step, i) => (
+                  <li key={step.t} className="flex items-start gap-3.5">
+                    <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-paper">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <h3 className="text-base font-semibold tracking-tight text-ink">
+                        {step.t}
+                      </h3>
+                      <p className="mt-1 text-sm/6 text-mute">{step.b}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div>
+              <Eyebrow>Sample output</Eyebrow>
+              <div className="mt-3">
+                <CodeBlock code={SAMPLE_OUTPUT} variant="terminal" />
+              </div>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      <section className="border-t border-line bg-paper-soft py-20 text-center md:py-24">
+        <Container size="md">
+          <h2 className="font-sans text-3xl/[1.1] font-semibold tracking-tight text-ink md:text-4xl/[1.05]">
+            Ready to stress test your stack?
+          </h2>
+          <div className="mx-auto mt-8 max-w-sm">
+            <CodeBlock
+              code="npx integrateapi stress-test"
+              variant="inline"
+            />
+          </div>
+          <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm">
+            <Link
+              href="/templates"
+              className="text-mute transition-colors hover:text-ink"
+            >
+              Browse templates →
+            </Link>
+            <Link
+              href="/registry"
+              className="text-mute transition-colors hover:text-ink"
+            >
+              Explore registry →
+            </Link>
+            <Link
+              href="/docs"
+              className="text-mute transition-colors hover:text-ink"
+            >
+              Read docs →
+            </Link>
+          </div>
+        </Container>
       </section>
-    </div>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { ClerkGate } from "@/components/ClerkGate";
+import { Footer } from "@/components/Footer";
 import Navigation from "@/components/Navigation";
 import {
   effectiveClerkPublishableKey,
@@ -8,9 +9,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IntegrateAPI — Build SaaS integrations faster",
+  title: "IntegrateAPI — Ship integrations, not glue",
   description:
-    "Install production-ready integrations for your Next.js app with one CLI command.",
+    "Production-ready integrations installed into your project with one CLI command. Stripe, Slack, Shopify, Notion, HubSpot — you own the code.",
 };
 
 export const dynamic = "force-dynamic";
@@ -26,9 +27,7 @@ export default function RootLayout({
 
   if (
     process.env.NODE_ENV === "development" &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()?.startsWith(
-      "pk_live_",
-    ) &&
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()?.startsWith("pk_live_") &&
     !(
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY_DEV?.trim() &&
       process.env.CLERK_SECRET_KEY_DEV?.trim()
@@ -45,16 +44,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body>
+      <body className="flex min-h-dvh flex-col bg-paper text-ink antialiased">
         <ClerkGate enabled={clerkEnabled} publishableKey={pk}>
-          <div className="app">
-            <Navigation />
-            <main>{children}</main>
-          </div>
+          <Navigation />
+          <main className="flex-1">{children}</main>
+          <Footer />
         </ClerkGate>
       </body>
     </html>

@@ -1,0 +1,187 @@
+<div style="padding: 1.5rem 0;">
+
+<div id="retro-stage" style="font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; background: #0a0e0a; border-radius: 12px; overflow: hidden; border: 0.5px solid var(--color-border-secondary); position: relative;">
+
+  <div style="background: #1a1f1a; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #2a3024;">
+    <div style="display: flex; gap: 6px;">
+      <div style="width: 11px; height: 11px; border-radius: 50%; background: #ff5f56;"></div>
+      <div style="width: 11px; height: 11px; border-radius: 50%; background: #ffbd2e;"></div>
+      <div style="width: 11px; height: 11px; border-radius: 50%; background: #27c93f;"></div>
+    </div>
+    <div style="flex: 1; text-align: center; color: #6b7a5b; font-size: 12px; letter-spacing: 0.5px;">~/my-saas-app — integrateapi v1.4.2</div>
+    <div id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #f5b942;"></div>
+  </div>
+
+  <div style="position: relative;">
+    <div id="scanlines" style="position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0) 4px); z-index: 2;"></div>
+
+    <div id="terminal-body" style="padding: 20px 22px; min-height: 460px; color: #d4ff7a; font-size: 13.5px; line-height: 1.65; position: relative; z-index: 1;">
+
+      <pre id="ascii-logo" style="color: #f5b942; margin: 0 0 14px; font-size: 10px; line-height: 1.15; font-family: inherit;"></pre>
+
+      <div id="line-stream"></div>
+
+      <div id="prompt-line" style="display: none; margin-top: 8px;">
+        <span style="color: #6dd3ff;">reli@studio</span><span style="color: #d4ff7a;">:</span><span style="color: #b88dff;">~/my-saas-app</span><span style="color: #d4ff7a;">$ </span><span id="typed-cmd"></span><span id="cursor" style="display: inline-block; width: 8px; height: 15px; background: #d4ff7a; vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(2) infinite;"></span>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background: #1a1f1a; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2a3024; font-size: 11px; color: #6b7a5b; letter-spacing: 0.3px;">
+    <span>READY</span>
+    <span id="footer-meta">FREE TIER · 3/5 INSTALLS</span>
+    <span>UTF-8</span>
+  </div>
+</div>
+
+<div style="display: flex; gap: 8px; margin-top: 14px; justify-content: center;">
+  <button id="replay-btn" onclick="runDemo()" style="font-size: 13px;"><i class="ti ti-refresh" style="font-size: 14px; vertical-align: -2px; margin-right: 4px;"></i>replay</button>
+  <button onclick="sendPrompt('Show me what the generated Stripe integration code actually looks like')" style="font-size: 13px;">see generated code ↗</button>
+  <button onclick="sendPrompt('What other retro animation styles could we try for this demo?')" style="font-size: 13px;">try another style ↗</button>
+</div>
+
+</div>
+
+<style>
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+@keyframes flicker { 0%, 100% { opacity: 1; } 92% { opacity: 0.97; } 94% { opacity: 1; } 96% { opacity: 0.94; } 98% { opacity: 1; } }
+@keyframes pulse-dot { 0%, 100% { background: #f5b942; box-shadow: 0 0 8px #f5b942; } 50% { background: #27c93f; box-shadow: 0 0 8px #27c93f; } }
+#terminal-body { animation: flicker 6s infinite; }
+#status-dot { animation: pulse-dot 1.4s infinite; }
+.barfill { display: inline-block; background: #2a3024; height: 10px; vertical-align: middle; position: relative; overflow: hidden; border-radius: 1px; }
+.barfill > span { display: block; height: 100%; background: #d4ff7a; width: 0; transition: width 0.4s ease; }
+.ok { color: #27c93f; }
+.warn { color: #f5b942; }
+.dim { color: #6b7a5b; }
+.brand { color: #f5b942; font-weight: 500; }
+.file { color: #6dd3ff; }
+.flag { color: #b88dff; }
+</style>
+
+<script>
+const logo = [
+"  ╦╔╗╔╦╔═╗╔═╗╦═╗╔═╗╔╦╗╔═╗  ╔═╗╔═╗╦",
+"  ║║║║║║╣ ║ ╦╠╦╝╠═╣ ║ ║╣   ╠═╣╠═╝║",
+"  ╩╝╚╝╩╚═╝╚═╝╩╚═╩ ╩ ╩ ╚═╝  ╩ ╩╩  ╩",
+"  ─────────────────────────────────",
+"   ship integrations, not glue"
+].join("\n");
+
+const stream = document.getElementById('line-stream');
+const promptLine = document.getElementById('prompt-line');
+const typedCmd = document.getElementById('typed-cmd');
+const footer = document.getElementById('footer-meta');
+const logoEl = document.getElementById('ascii-logo');
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function addLine(html, color) {
+  const d = document.createElement('div');
+  if (color) d.style.color = color;
+  d.innerHTML = html;
+  stream.appendChild(d);
+  return d;
+}
+
+async function typeCmd(text, speed = 55) {
+  typedCmd.textContent = '';
+  for (const ch of text) {
+    typedCmd.textContent += ch;
+    await sleep(speed + Math.random() * 40);
+  }
+}
+
+async function progressBar(label, durationMs = 900) {
+  const wrap = document.createElement('div');
+  wrap.style.margin = '4px 0';
+  wrap.innerHTML = `<span class="dim">›</span> ${label} <span class="barfill" style="width: 140px; margin-left: 8px;"><span></span></span> <span class="pct dim">0%</span>`;
+  stream.appendChild(wrap);
+  const fill = wrap.querySelector('.barfill > span');
+  const pct = wrap.querySelector('.pct');
+  const steps = 20;
+  for (let i = 1; i <= steps; i++) {
+    const p = (i / steps) * 100;
+    fill.style.width = p + '%';
+    pct.textContent = Math.round(p) + '%';
+    await sleep(durationMs / steps);
+  }
+  pct.innerHTML = '<span class="ok">✓</span>';
+  return wrap;
+}
+
+async function runDemo() {
+  stream.innerHTML = '';
+  logoEl.textContent = '';
+  promptLine.style.display = 'none';
+  typedCmd.textContent = '';
+  footer.textContent = 'FREE TIER · 3/5 INSTALLS';
+
+  for (const ch of logo) {
+    logoEl.textContent += ch;
+    await sleep(4);
+  }
+
+  await sleep(300);
+  promptLine.style.display = 'block';
+  await sleep(400);
+
+  await typeCmd('npx integrateapi add stripe');
+  await sleep(500);
+  addLine(`<span class="dim">reli@studio:~/my-saas-app$</span> <span>npx integrateapi add stripe</span>`);
+  typedCmd.textContent = '';
+  promptLine.style.display = 'none';
+
+  await sleep(300);
+  addLine(`<span class="dim">→</span> authenticating <span class="dim">···</span> <span class="ok">authorized as reli@relimusic.com</span>`);
+  await sleep(400);
+  addLine(`<span class="dim">→</span> fetching template <span class="brand">stripe@2.1.0</span> from registry`);
+  await sleep(350);
+  await progressBar('downloading <span class="file">stripe.template.tar.gz</span>', 700);
+
+  await sleep(200);
+  addLine(`<span class="dim">→</span> scanning project <span class="dim">(next.js 15.0 · app router · typescript)</span>`);
+  await sleep(400);
+  addLine(`<span class="dim">→</span> writing files:`);
+
+  const files = [
+    'lib/stripe/client.ts',
+    'lib/stripe/webhooks.ts',
+    'app/api/stripe/route.ts',
+    'app/api/webhooks/stripe/route.ts',
+    'types/stripe.d.ts',
+    '.env.local.example'
+  ];
+  for (const f of files) {
+    addLine(`   <span class="ok">+</span> <span class="file">${f}</span>`);
+    await sleep(140);
+  }
+
+  await sleep(200);
+  addLine(`<span class="dim">→</span> patching <span class="file">package.json</span> <span class="dim">(+stripe ^17.4.0, +micro ^10.0.1)</span>`);
+  await sleep(350);
+  await progressBar('installing dependencies', 1100);
+
+  await sleep(200);
+  addLine(`<span class="dim">→</span> generating env keys <span class="flag">--mode=test</span>`);
+  await sleep(300);
+  addLine(`   <span class="dim">STRIPE_SECRET_KEY        </span><span class="warn">sk_test_••••••••••••••••3kQz</span>`);
+  await sleep(150);
+  addLine(`   <span class="dim">STRIPE_WEBHOOK_SECRET    </span><span class="warn">whsec_••••••••••••••••••dM2x</span>`);
+
+  await sleep(400);
+  addLine('');
+  addLine(`<span class="ok">✓</span> <span class="brand">stripe</span> integration installed in <span class="ok">3.2s</span>`);
+  await sleep(200);
+  addLine(`<span class="dim">  next:</span> <span class="file">npm run dev</span> <span class="dim">then visit</span> <span class="file">/api/stripe</span>`);
+
+  await sleep(500);
+  footer.textContent = 'FREE TIER · 4/5 INSTALLS';
+
+  await sleep(700);
+  promptLine.style.display = 'block';
+  typedCmd.textContent = '';
+}
+
+runDemo();
+</script>

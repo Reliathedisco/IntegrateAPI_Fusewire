@@ -1,89 +1,119 @@
-import Link from "next/link";
+import { Container } from "@/components/ui/Container";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Eyebrow } from "@/components/ui/Eyebrow";
+import { LinkButton } from "@/components/ui/Button";
+import { Pill } from "@/components/ui/Pill";
 import CodeBlock from "@/components/CodeBlock";
 
-const steps = [
+const steps: Array<{
+  num: string;
+  title: string;
+  body: string;
+  code?: string;
+}> = [
   {
     num: "01",
     title: "Sign up & authenticate",
-    description:
-      "Create an account, then link your CLI so installs are tied to your plan.",
+    body: "Create an account, then link your CLI so installs are tied to your plan.",
     code: "npx integrateapi login",
   },
   {
     num: "02",
     title: "Browse integrations",
-    description:
-      "See every available integration — or search by name. All templates are listed with tier and category.",
+    body: "See every available integration — or search by name. All templates are listed with tier and category.",
     code: "npx integrateapi list",
   },
   {
     num: "03",
     title: "Install an integration",
-    description:
-      "Run one command from your Next.js project root. The CLI drops typed, production-ready code into your /lib folder — no SDK dependency.",
+    body: "Run one command from your project root. The CLI drops typed, production-ready code into your /lib folder — no SDK dependency.",
     code: "npx integrateapi add stripe",
   },
   {
     num: "04",
     title: "Add your env vars",
-    description:
-      "Each integration tells you exactly which environment variables are required. Add them to your .env.local and you're live.",
+    body: "Each integration tells you exactly which environment variables are required. Add them to your .env.local and you're live.",
     code: "# check .env.example after install",
   },
   {
     num: "05",
     title: "Ship it",
-    description:
-      "The code is yours. Read it, edit it, extend it. Deploy when ready — no runtime dependency, no lock-in.",
+    body: "The code is yours. Read it, edit it, extend it. Deploy when ready — no runtime dependency, no lock-in.",
     code: "npx integrateapi doctor",
   },
 ];
 
 export default function GetStartedPage() {
   return (
-    <div className="get-started-page">
-      <section className="get-started-hero">
-        <div className="get-started-hero-grid"></div>
-        <div className="get-started-hero-content">
-          <div className="stress-badge">Quick start</div>
-          <h1>Get Started</h1>
-          <p className="get-started-sub">
-            Go from zero to a working integration in under a minute. Five steps,
-            one CLI, full code ownership.
-          </p>
-        </div>
-      </section>
-
-      <section className="get-started-steps">
-        {steps.map((step) => (
-          <div key={step.num} className="get-started-step">
-            <div className="get-started-step-num">{step.num}</div>
-            <div className="get-started-step-body">
-              <h2>{step.title}</h2>
-              <p>{step.description}</p>
-              <CodeBlock code={step.code} />
-            </div>
+    <>
+      <section className="border-b border-line py-20 md:py-24">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center">
+            <Pill>Quick start</Pill>
+            <h1 className="mt-5 font-sans text-4xl/[1.05] font-semibold tracking-tight text-ink md:text-5xl/[1.05]">
+              Zero to a working integration in under a minute.
+            </h1>
+            <p className="mx-auto mt-5 max-w-md text-base/7 text-mute">
+              Five steps, one CLI, full code ownership. Works on any Next.js or
+              Node project.
+            </p>
           </div>
-        ))}
+        </Container>
       </section>
 
-      <section className="get-started-next">
-        <h2>What&apos;s next?</h2>
-        <div className="get-started-links">
-          <Link href="/templates" className="btn-primary">
-            Browse Templates
-          </Link>
-          <Link href="/stress-test" className="btn-ghost">
-            Run Stress Test
-          </Link>
-          <Link href="/docs" className="btn-ghost">
-            CLI Docs
-          </Link>
-          <Link href="/registry" className="btn-ghost">
-            Explore Registry
-          </Link>
-        </div>
+      <section className="py-20 md:py-24">
+        <Container size="md">
+          <ol className="flex flex-col gap-4">
+            {steps.map((step) => (
+              <li
+                key={step.num}
+                className="rounded-2xl border border-line bg-card p-7 transition hover:border-line-strong"
+              >
+                <div className="flex items-start gap-5 md:gap-7">
+                  <span className="font-mono text-xs font-medium tracking-[0.18em] text-faint">
+                    {step.num}
+                  </span>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold tracking-tight text-ink">
+                      {step.title}
+                    </h2>
+                    <p className="mt-2 text-sm/6 text-mute">{step.body}</p>
+                    {step.code && (
+                      <div className="mt-4">
+                        <CodeBlock code={step.code} variant="inline" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Container>
       </section>
-    </div>
+
+      <section className="border-t border-line bg-paper-soft py-20 md:py-24">
+        <Container size="md">
+          <SectionHeading
+            align="center"
+            eyebrow="What's next"
+            title="Pick where you go from here."
+          />
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            <LinkButton href="/templates" variant="accent">
+              Browse templates
+            </LinkButton>
+            <LinkButton href="/stress-test" variant="secondary">
+              Run stress test
+            </LinkButton>
+            <LinkButton href="/docs" variant="secondary">
+              CLI docs
+            </LinkButton>
+            <LinkButton href="/registry" variant="ghost">
+              Explore registry
+            </LinkButton>
+          </div>
+        </Container>
+      </section>
+    </>
   );
 }

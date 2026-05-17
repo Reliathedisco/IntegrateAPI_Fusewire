@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { Container } from "@/components/ui/Container";
+import { Eyebrow } from "@/components/ui/Eyebrow";
+import { Button } from "@/components/ui/Button";
 
 export default function AccountError({
   error,
@@ -17,17 +20,27 @@ export default function AccountError({
   }, [error]);
 
   return (
-    <div className="container">
-      <h1>Account</h1>
-      <div className="accountCard" style={{ marginTop: 24 }}>
-        <p>Something went wrong loading your account.</p>
-        <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", marginBottom: 16 }}>
-          This can happen during brief connection drops — retrying usually fixes it.
-        </p>
-        <button type="button" className="primary" onClick={reset}>
-          Try again
-        </button>
-      </div>
-    </div>
+    <section className="py-16 md:py-20">
+      <Container size="md">
+        <Eyebrow>Account</Eyebrow>
+        <h1 className="mt-3 font-sans text-3xl/[1.1] font-semibold tracking-tight text-ink">
+          Something went wrong.
+        </h1>
+        <div className="mt-8 max-w-md rounded-2xl border border-line bg-card p-6">
+          <p className="text-sm text-ink">
+            We couldn&apos;t load your account.
+          </p>
+          <p className="mt-2 text-sm/6 text-mute">
+            This can happen during brief connection drops — retrying usually
+            fixes it.
+          </p>
+          <div className="mt-5">
+            <Button variant="accent" onClick={reset}>
+              Try again
+            </Button>
+          </div>
+        </div>
+      </Container>
+    </section>
   );
 }

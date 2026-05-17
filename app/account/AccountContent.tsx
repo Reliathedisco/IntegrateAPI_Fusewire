@@ -3,10 +3,21 @@
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Eyebrow } from "@/components/ui/Eyebrow";
+import { Pill } from "@/components/ui/Pill";
+import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 
 const MAX_FREE_INTEGRATIONS = 5;
 
-export default function AccountContent({ initialCliAuthToken, userId }: { initialCliAuthToken: string | null; userId: string }) {
+export default function AccountContent({
+  initialCliAuthToken,
+  userId,
+}: {
+  initialCliAuthToken: string | null;
+  userId: string;
+}) {
+  void userId; // Reserved for future per-user calls
   const { user, isLoaded } = useUser();
 
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -20,31 +31,38 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
     searchParams.get("upgraded") === "true" ||
     searchParams.get("success") === "true";
 
-  if (!isLoaded) return null;
+  if (!isLoaded) {
+    return (
+      <div className="mt-8 rounded-2xl border border-line bg-card p-6">
+        <p className="text-sm text-mute">Loading account...</p>
+      </div>
+    );
+  }
 
   const hasLifetimePro = user?.publicMetadata?.hasLifetimePro === true;
-  const subscriptionStatus = user?.publicMetadata?.subscriptionStatus as string | undefined;
+  const subscriptionStatus = user?.publicMetadata?.subscriptionStatus as
+    | string
+    | undefined;
   const subscriptionIsPro =
     subscriptionStatus === "active" ||
     subscriptionStatus === "trialing" ||
     subscriptionStatus === "past_due";
   const isPro =
-    hasLifetimePro ||
-    subscriptionIsPro ||
-    user?.publicMetadata?.isPro === true;
+    hasLifetimePro || subscriptionIsPro || user?.publicMetadata?.isPro === true;
   const usedIntegrations =
     (user?.publicMetadata?.usedIntegrations as number) || 0;
 
   const planLabel = hasLifetimePro
     ? "Pro (Lifetime)"
     : subscriptionIsPro
-    ? "Pro (Subscription)"
-    : isPro
-    ? "Pro"
-    : "Free";
+      ? "Pro (Subscription)"
+      : isPro
+        ? "Pro"
+        : "Free";
 
-  const stripeCustomerId =
-    user?.publicMetadata?.stripeCustomerId as string | undefined;
+  const stripeCustomerId = user?.publicMetadata?.stripeCustomerId as
+    | string
+    | undefined;
 
   const startCheckout = async (plan: string) => {
     setLoadingPlan(plan);
@@ -92,10 +110,10 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
 
       setCliAuthToken(data.authToken);
       await navigator.clipboard.writeText(data.authToken);
-      setToastMessage("copied new key");
+      setToastMessage("New key copied");
       setTimeout(() => setToastMessage(null), 2000);
     } catch {
-      setTokenError("failed to generate api key — try again");
+      setTokenError("Failed to generate API key — try again.");
     } finally {
       setIsGeneratingToken(false);
     }
@@ -105,166 +123,187 @@ export default function AccountContent({ initialCliAuthToken, userId }: { initia
     if (!cliAuthToken) return;
     try {
       await navigator.clipboard.writeText(cliAuthToken);
-      setToastMessage("copied key");
+      setToastMessage("Key copied");
       setTimeout(() => setToastMessage(null), 2000);
     } catch {
-      setTokenError("copy failed — use manual selection");
+      setTokenError("Copy failed — use manual selection.");
     }
   };
 
   const handleCopyCommand = async () => {
     if (!cliAuthToken) return;
     try {
-      await navigator.clipboard.writeText(`npx integrateapi login --key ${cliAuthToken}`);
-      setToastMessage("copied command");
+      await navigator.clipboard.writeText(
+        `npx integrateapi login --key ${cliAuthToken}`,
+      );
+      setToastMessage("Command copied");
       setTimeout(() => setToastMessage(null), 2000);
     } catch {
-      setTokenError("copy failed — use manual selection");
+      setTokenError("Copy failed — use manual selection.");
     }
   };
 
+  const usagePct = Math.min(
+    (usedIntegrations / MAX_FREE_INTEGRATIONS) * 100,
+    100,
+  );
+
   return (
-    <div className="account-section">
-
-      {/* Account info */}
-      <div className="account-info-card">
-        <div>
-          <p className="account-label">Email</p>
-          <p className="account-value">
-            {user?.primaryEmailAddress?.emailAddress}
-          </p>
-        </div>
-
-        <div>
-          <p className="account-label">Plan</p>
-          <span className={`account-plan-badge ${isPro ? "pro" : "free"}`}>
-            {planLabel}
-          </span>
-        </div>
-
-        <div>
-          <p className="account-label">Integrations</p>
-          {isPro ? (
-            <p className="account-value">Unlimited integrations</p>
-          ) : (
-            <div>
-              <div className="account-usage-bar">
-                <div
-                  className="account-usage-fill"
-                  style={{
-                    width: `${Math.min((usedIntegrations / MAX_FREE_INTEGRATIONS) * 100, 100)}%`,
-                  }}
-                />
-              </div>
-              <p className="account-usage-text">
-                {usedIntegrations} / {MAX_FREE_INTEGRATIONS}
-              </p>
+    <div className="mt-10 flex flex-col gap-10">
+      {/* Plan + usage */}
+      <div className="flex flex-col gap-7 rounded-2xl border border-line bg-card p-7">
+        <div className="grid gap-6 md:grid-cols-3">
+          <div>
+            <Eyebrow>Email</Eyebrow>
+            <p className="mt-2 text-sm text-ink">
+              {user?.primaryEmailAddress?.emailAddress}
+            </p>
+          </div>
+          <div>
+            <Eyebrow>Plan</Eyebrow>
+            <div className="mt-2">
+              <Pill variant={isPro ? "accent" : "default"}>{planLabel}</Pill>
             </div>
-          )}
+          </div>
+          <div>
+            <Eyebrow>Integrations</Eyebrow>
+            {isPro ? (
+              <p className="mt-2 text-sm text-ink">Unlimited</p>
+            ) : (
+              <div className="mt-2">
+                <div className="h-1.5 overflow-hidden rounded-full bg-line">
+                  <div
+                    className="h-full rounded-full bg-ink transition-[width]"
+                    style={{ width: `${usagePct}%` }}
+                  />
+                </div>
+                <p className="mt-2 font-mono text-xs text-faint">
+                  {usedIntegrations} / {MAX_FREE_INTEGRATIONS}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="account-actions">
+        <div className="flex flex-wrap gap-3 border-t border-line pt-6">
           {!isPro && !justPurchased ? (
             <>
-              <button
+              <Button
+                variant="accent"
                 onClick={() => startCheckout("subscription")}
                 disabled={loadingPlan === "subscription"}
-                className="account-btn primary"
               >
-                {loadingPlan === "subscription" ? (
-                  <><span className="spinner" /> loading...</>
-                ) : (
-                  "Subscribe"
-                )}
-              </button>
-              <button
+                {loadingPlan === "subscription" ? "Loading..." : "Subscribe ($9/mo)"}
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => startCheckout("lifetime")}
                 disabled={loadingPlan === "lifetime"}
-                className="account-btn ghost"
               >
-                {loadingPlan === "lifetime" ? "loading..." : "Lifetime"}
-              </button>
+                {loadingPlan === "lifetime" ? "Loading..." : "Lifetime ($29)"}
+              </Button>
             </>
           ) : (
             stripeCustomerId && (
-              <button
+              <Button
+                variant="secondary"
                 onClick={manageBilling}
                 disabled={loadingPlan === "subscription"}
-                className="account-btn ghost"
               >
                 Manage billing
-              </button>
+              </Button>
             )
           )}
         </div>
       </div>
 
       {/* CLI Authentication */}
-      <section className="cli-section">
-        <h2>CLI Authentication</h2>
+      <section className="flex flex-col gap-5">
+        <header>
+          <Eyebrow>CLI authentication</Eyebrow>
+          <h2 className="mt-2 font-sans text-xl font-semibold tracking-tight text-ink">
+            API key for the CLI
+          </h2>
+        </header>
 
-        <div className="cli-card">
+        <div className="flex flex-col gap-5 rounded-2xl border border-line bg-card p-7">
           {cliAuthToken ? (
             <>
               <div>
-                <p className="account-label">API Key</p>
-                <div className="cli-token-display">
-                  <code>sk_live_****...{cliAuthToken.slice(-4)}</code>
-                  <button onClick={handleCopyToken} className="cli-copy-btn">
-                    Copy Key
+                <Eyebrow>API key</Eyebrow>
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-line bg-paper-soft px-4 py-3">
+                  <code className="font-mono text-[13px] text-mute">
+                    sk_live_••••...{cliAuthToken.slice(-4)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyToken}
+                    className="font-mono text-[11px] text-faint transition hover:text-accent"
+                  >
+                    Copy key
                   </button>
                 </div>
               </div>
 
               <div>
-                <p className="account-label">Full command</p>
-                <div className="cli-token-display">
-                  <code>npx integrateapi login --key sk_live_****...{cliAuthToken.slice(-4)}</code>
-                  <button onClick={handleCopyCommand} className="cli-copy-btn">
-                    Copy Command
+                <Eyebrow>Full command</Eyebrow>
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-line bg-paper-soft px-4 py-3">
+                  <code className="overflow-x-auto font-mono text-[13px] text-mute">
+                    npx integrateapi login --key sk_live_••••...{cliAuthToken.slice(-4)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyCommand}
+                    className="shrink-0 font-mono text-[11px] text-faint transition hover:text-accent"
+                  >
+                    Copy command
                   </button>
                 </div>
               </div>
 
               <div>
-                <button
+                <Button
+                  variant="accent"
                   onClick={handleGenerateToken}
                   disabled={isGeneratingToken}
-                  className="account-btn primary"
                 >
-                  {isGeneratingToken ? (
-                    <><span className="spinner" /> generating...</>
-                  ) : (
-                    "Regenerate API Key"
-                  )}
-                </button>
+                  {isGeneratingToken ? "Generating..." : "Regenerate API key"}
+                </Button>
               </div>
             </>
           ) : (
             <div>
-              <p className="cli-no-token">
+              <p className="text-sm text-mute">
                 No API key yet — generate one to connect the CLI.
               </p>
-              <button
-                onClick={handleGenerateToken}
-                disabled={isGeneratingToken}
-                className="account-btn primary"
-              >
-                {isGeneratingToken ? (
-                  <><span className="spinner" /> generating...</>
-                ) : (
-                  "Generate API Key"
-                )}
-              </button>
+              <div className="mt-4">
+                <Button
+                  variant="accent"
+                  onClick={handleGenerateToken}
+                  disabled={isGeneratingToken}
+                >
+                  {isGeneratingToken ? "Generating..." : "Generate API key"}
+                </Button>
+              </div>
             </div>
           )}
 
           {toastMessage && (
-            <div className="cli-toast">{toastMessage}</div>
+            <p
+              className={cn(
+                "inline-flex w-fit items-center rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-wider",
+                "border-success/25 bg-success/10 text-success",
+              )}
+              role="status"
+            >
+              {toastMessage}
+            </p>
           )}
 
           {tokenError && (
-            <p className="cli-error">{tokenError}</p>
+            <p className="font-mono text-[12px] text-danger" role="alert">
+              {tokenError}
+            </p>
           )}
         </div>
       </section>

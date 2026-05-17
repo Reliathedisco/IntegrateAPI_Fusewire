@@ -2,6 +2,30 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../../Downloads/insiders-main/rules"
+		},
+		{
+			"path": "../../Downloads/insiders-main/pre-release-documentation"
+		},
+		{
+			"path": "../../Downloads/tailwindcss-main/scripts"
+		},
+		{
+			"path": "../../Downloads/tailwindcss-main/playgrounds"
+		},
+		{
+			"path": "../../Downloads/tailwindcss-main/patches"
+		},
+		{
+			"path": "../../Downloads/tailwindcss-main/packages"
+		},
+		{
+			"path": "../../Downloads/tailwindcss-main/integrations"
+		},
+		{
+			"path": "../../Downloads/tailwindcss-main/crates"
 		}
 	],
 	"settings": {}
